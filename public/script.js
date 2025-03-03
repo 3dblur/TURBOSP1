@@ -335,7 +335,9 @@ const state = {
     lanePositions: [-5, 0, 5], // Update lane positions to match new road width
     score: 1,
     highScore: 1,
-    gameOver: false
+    gameOver: false,
+    canChangeLane: true, // Add this to track if we can change lanes
+    targetLane: 1, // Add this to track the target lane
 };
 
 const keys = {};
@@ -419,11 +421,22 @@ function animate() {
 
 // Update the bike controls for three lanes
 function updateControls() {
-    if (keys['ArrowLeft'] && state.bikeLane > 0) {
-        state.bikeLane--;
+    if (state.canChangeLane) {
+        if (keys['ArrowLeft'] && state.bikeLane > 0) {
+            state.targetLane = state.bikeLane - 1;
+            state.bikeLane = state.targetLane;
+            state.canChangeLane = false;
+        }
+        if (keys['ArrowRight'] && state.bikeLane < 2) {
+            state.targetLane = state.bikeLane + 1;
+            state.bikeLane = state.targetLane;
+            state.canChangeLane = false;
+        }
     }
-    if (keys['ArrowRight'] && state.bikeLane < 2) {
-        state.bikeLane++;
+    
+    // Reset the canChangeLane flag when keys are released
+    if (!keys['ArrowLeft'] && !keys['ArrowRight']) {
+        state.canChangeLane = true;
     }
     
     const targetX = state.lanePositions[state.bikeLane];
