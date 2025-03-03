@@ -200,129 +200,237 @@ function createDetailedRoad() {
     return roadGroup;
 }
 
-// Create a detailed superbike
+// Create a detailed superbike based on the reference image
 function createDetailedBike() {
     const group = new THREE.Group();
 
-    // Main body (fairing)
-    const bodyGeometry = new THREE.BoxGeometry(0.8, 0.6, 2);
+    // Main body - red sport bike
+    const bodyGeometry = new THREE.BoxGeometry(0.7, 0.3, 1.8);
     const bodyMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0xff0000,
+        color: 0xff0000, // Red
         metalness: 0.8,
         roughness: 0.2,
         shininess: 90
     });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    body.position.y = 0.5;
+    body.position.y = 0.4;
     group.add(body);
-
-    // Front fairing (aerodynamic shape)
-    const frontFairingGeometry = new THREE.ConeGeometry(0.4, 0.8, 8);
-    const frontFairing = new THREE.Mesh(frontFairingGeometry, bodyMaterial);
-    frontFairing.rotation.z = Math.PI / 2;
-    frontFairing.rotation.y = Math.PI / 2;
-    frontFairing.position.set(0, 0.5, 1);
-    group.add(frontFairing);
-
-    // Windshield
-    const windshieldGeometry = new THREE.BoxGeometry(0.7, 0.5, 0.1);
-    const windshieldMaterial = new THREE.MeshPhongMaterial({
-        color: 0x88ccff,
-        transparent: true,
-        opacity: 0.3,
-        shininess: 100
-    });
-    const windshield = new THREE.Mesh(windshieldGeometry, windshieldMaterial);
-    windshield.position.set(0, 0.8, 0.5);
-    windshield.rotation.x = Math.PI / 6;
-    group.add(windshield);
-
-    // Seat
+    
+    // Create the seat - black
     const seatGeometry = new THREE.BoxGeometry(0.4, 0.1, 0.8);
-    const seatMaterial = new THREE.MeshPhongMaterial({ color: 0x111111 });
-    const seat = new THREE.Mesh(seatGeometry, seatMaterial);
-    seat.position.set(0, 0.65, -0.2);
-    group.add(seat);
-
-    // Handlebars
-    const handlebarGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.8);
-    const handlebarMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x333333,
-        metalness: 0.9,
-        roughness: 0.1
+    const blackMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x111111, // Black
+        metalness: 0.5,
+        roughness: 0.5
     });
+    const seat = new THREE.Mesh(seatGeometry, blackMaterial);
+    seat.position.set(0, 0.55, -0.2);
+    group.add(seat);
+    
+    // Create the tank - red with black stripe
+    const tankGeometry = new THREE.BoxGeometry(0.6, 0.2, 0.6);
+    const tank = new THREE.Mesh(tankGeometry, bodyMaterial);
+    tank.position.set(0, 0.55, 0.4);
+    group.add(tank);
+    
+    // Black stripe down the middle of the tank
+    const stripeGeometry = new THREE.BoxGeometry(0.1, 0.21, 0.61);
+    const stripe = new THREE.Mesh(stripeGeometry, blackMaterial);
+    stripe.position.set(0, 0.55, 0.4);
+    group.add(stripe);
+    
+    // Front fairing - more detailed
+    const fairingGeometry = new THREE.ConeGeometry(0.35, 0.7, 8);
+    const fairing = new THREE.Mesh(fairingGeometry, bodyMaterial);
+    fairing.rotation.x = -Math.PI / 2;
+    fairing.position.set(0, 0.4, 1.0);
+    group.add(fairing);
+    
+    // Handlebars
+    const handlebarGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.7, 8);
+    const handlebarMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
     const handlebar = new THREE.Mesh(handlebarGeometry, handlebarMaterial);
     handlebar.rotation.z = Math.PI / 2;
-    handlebar.position.set(0, 0.7, 0.8);
+    handlebar.position.set(0, 0.65, 0.8);
     group.add(handlebar);
-
-    // Wheels with spokes
-    function createWheel() {
-        const wheelGroup = new THREE.Group();
-        
-        // Tire
-        const tireGeometry = new THREE.TorusGeometry(0.3, 0.1, 16, 32);
-        const tireMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0x111111,
-            roughness: 0.8
-        });
-        const tire = new THREE.Mesh(tireGeometry, tireMaterial);
-        
-        // Hub
-        const hubGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.12, 32);
-        const hubMaterial = new THREE.MeshPhongMaterial({
-            color: 0xcccccc,
-            metalness: 0.9,
-            roughness: 0.1
-        });
-        const hub = new THREE.Mesh(hubGeometry, hubMaterial);
-        
-        // Spokes
-        const spokeGeometry = new THREE.CylinderGeometry(0.01, 0.01, 0.25);
-        const spokeMaterial = new THREE.MeshPhongMaterial({
-            color: 0xcccccc,
-            metalness: 0.9
-        });
-        
-        for (let i = 0; i < 8; i++) {
-            const spoke = new THREE.Mesh(spokeGeometry, spokeMaterial);
-            spoke.rotation.z = (i * Math.PI) / 4;
-            wheelGroup.add(spoke);
-        }
-        
-        wheelGroup.add(tire);
-        wheelGroup.add(hub);
-        return wheelGroup;
-    }
-
-    // Add wheels
-    const frontWheel = createWheel();
-    frontWheel.rotation.y = Math.PI / 2;
-    frontWheel.position.set(0, 0.3, 1);
-    group.add(frontWheel);
-
-    const backWheel = createWheel();
-    backWheel.rotation.y = Math.PI / 2;
-    backWheel.position.set(0, 0.3, -1);
-    group.add(backWheel);
-
-    // Add exhaust pipes
-    const exhaustGeometry = new THREE.CylinderGeometry(0.05, 0.07, 0.8);
-    const exhaustMaterial = new THREE.MeshPhongMaterial({
+    
+    // Mirrors
+    const mirrorGeometry = new THREE.BoxGeometry(0.1, 0.05, 0.15);
+    const mirrorMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x333333,
+        metalness: 0.9
+    });
+    
+    const leftMirror = new THREE.Mesh(mirrorGeometry, mirrorMaterial);
+    leftMirror.position.set(0.4, 0.65, 0.8);
+    group.add(leftMirror);
+    
+    const rightMirror = new THREE.Mesh(mirrorGeometry, mirrorMaterial);
+    rightMirror.position.set(-0.4, 0.65, 0.8);
+    group.add(rightMirror);
+    
+    // Front wheel with tire and rim
+    const wheelRadius = 0.4;
+    const wheelThickness = 0.15;
+    
+    // Tire (black)
+    const tireGeometry = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelThickness, 24);
+    const tireMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x111111,
+        roughness: 0.9
+    });
+    
+    const frontTire = new THREE.Mesh(tireGeometry, tireMaterial);
+    frontTire.rotation.z = Math.PI / 2;
+    frontTire.position.set(0, 0.4, 1.2);
+    group.add(frontTire);
+    
+    // Rim (silver)
+    const rimGeometry = new THREE.CylinderGeometry(wheelRadius * 0.7, wheelRadius * 0.7, wheelThickness + 0.01, 16);
+    const rimMaterial = new THREE.MeshPhongMaterial({ 
         color: 0xcccccc,
         metalness: 0.9,
         roughness: 0.1
     });
     
-    const exhaustPipe1 = new THREE.Mesh(exhaustGeometry, exhaustMaterial);
-    exhaustPipe1.rotation.z = Math.PI / 2;
-    exhaustPipe1.position.set(0.2, 0.3, -0.8);
-    group.add(exhaustPipe1);
-
-    const exhaustPipe2 = new THREE.Mesh(exhaustGeometry, exhaustMaterial);
-    exhaustPipe2.rotation.z = Math.PI / 2;
-    exhaustPipe2.position.set(-0.2, 0.3, -0.8);
-    group.add(exhaustPipe2);
+    const frontRim = new THREE.Mesh(rimGeometry, rimMaterial);
+    frontRim.rotation.z = Math.PI / 2;
+    frontRim.position.set(0, 0.4, 1.2);
+    group.add(frontRim);
+    
+    // Rear wheel with tire and rim
+    const rearTire = new THREE.Mesh(tireGeometry, tireMaterial);
+    rearTire.rotation.z = Math.PI / 2;
+    rearTire.position.set(0, 0.4, -0.8);
+    group.add(rearTire);
+    
+    const rearRim = new THREE.Mesh(rimGeometry, rimMaterial);
+    rearRim.rotation.z = Math.PI / 2;
+    rearRim.position.set(0, 0.4, -0.8);
+    group.add(rearRim);
+    
+    // Front forks
+    const forkGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.6, 8);
+    const forkMaterial = new THREE.MeshPhongMaterial({ color: 0x888888 });
+    
+    const rightFork = new THREE.Mesh(forkGeometry, forkMaterial);
+    rightFork.position.set(0.2, 0.4, 1.0);
+    group.add(rightFork);
+    
+    const leftFork = new THREE.Mesh(forkGeometry, forkMaterial);
+    leftFork.position.set(-0.2, 0.4, 1.0);
+    group.add(leftFork);
+    
+    // Exhaust pipes
+    const exhaustGeometry = new THREE.CylinderGeometry(0.06, 0.08, 0.6, 8);
+    const exhaustMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x333333,
+        metalness: 0.9,
+        roughness: 0.1
+    });
+    
+    const exhaust = new THREE.Mesh(exhaustGeometry, exhaustMaterial);
+    exhaust.rotation.x = Math.PI / 2;
+    exhaust.position.set(0.2, 0.3, -0.9);
+    group.add(exhaust);
+    
+    // Rider - positioned like in the reference image
+    // Rider body - create a more realistic riding position
+    const riderTorsoGeometry = new THREE.BoxGeometry(0.4, 0.5, 0.6);
+    const riderMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x222222, // Black suit
+        roughness: 0.7
+    });
+    
+    const riderTorso = new THREE.Mesh(riderTorsoGeometry, riderMaterial);
+    riderTorso.position.set(0, 0.8, 0);
+    riderTorso.rotation.x = Math.PI / 8; // Leaning forward
+    group.add(riderTorso);
+    
+    // Red jacket parts
+    const jacketGeometry = new THREE.BoxGeometry(0.42, 0.52, 0.4);
+    const jacketMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0xff0000, // Red jacket
+        roughness: 0.7
+    });
+    
+    const jacket = new THREE.Mesh(jacketGeometry, jacketMaterial);
+    jacket.position.set(0, 0.8, 0.1);
+    jacket.rotation.x = Math.PI / 8; // Match torso lean
+    group.add(jacket);
+    
+    // Helmet - yellow like in the reference
+    const helmetGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+    const helmetMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0xffff00, // Yellow helmet
+        roughness: 0.5,
+        metalness: 0.2
+    });
+    
+    const helmet = new THREE.Mesh(helmetGeometry, helmetMaterial);
+    helmet.position.set(0, 1.1, 0.2);
+    helmet.scale.set(1, 0.8, 1); // Slightly flattened
+    group.add(helmet);
+    
+    // Helmet visor
+    const visorGeometry = new THREE.BoxGeometry(0.3, 0.1, 0.05);
+    const visorMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x111111,
+        metalness: 0.9,
+        opacity: 0.7,
+        transparent: true
+    });
+    
+    const visor = new THREE.Mesh(visorGeometry, visorMaterial);
+    visor.position.set(0, 1.1, 0.35);
+    group.add(visor);
+    
+    // Arms
+    const armGeometry = new THREE.BoxGeometry(0.1, 0.3, 0.1);
+    
+    // Left arm
+    const leftArm = new THREE.Mesh(armGeometry, riderMaterial);
+    leftArm.position.set(0.3, 0.8, 0.4);
+    leftArm.rotation.z = Math.PI / 6;
+    leftArm.rotation.y = -Math.PI / 8;
+    group.add(leftArm);
+    
+    // Right arm
+    const rightArm = new THREE.Mesh(armGeometry, riderMaterial);
+    rightArm.position.set(-0.3, 0.8, 0.4);
+    rightArm.rotation.z = -Math.PI / 6;
+    rightArm.rotation.y = Math.PI / 8;
+    group.add(rightArm);
+    
+    // Legs
+    const thighGeometry = new THREE.BoxGeometry(0.15, 0.4, 0.15);
+    
+    // Left thigh
+    const leftThigh = new THREE.Mesh(thighGeometry, riderMaterial);
+    leftThigh.position.set(0.2, 0.5, -0.2);
+    leftThigh.rotation.x = Math.PI / 4;
+    group.add(leftThigh);
+    
+    // Right thigh
+    const rightThigh = new THREE.Mesh(thighGeometry, riderMaterial);
+    rightThigh.position.set(-0.2, 0.5, -0.2);
+    rightThigh.rotation.x = Math.PI / 4;
+    group.add(rightThigh);
+    
+    // Lower legs
+    const calfGeometry = new THREE.BoxGeometry(0.12, 0.4, 0.12);
+    
+    // Left calf
+    const leftCalf = new THREE.Mesh(calfGeometry, riderMaterial);
+    leftCalf.position.set(0.2, 0.3, -0.5);
+    leftCalf.rotation.x = -Math.PI / 8;
+    group.add(leftCalf);
+    
+    // Right calf
+    const rightCalf = new THREE.Mesh(calfGeometry, riderMaterial);
+    rightCalf.position.set(-0.2, 0.3, -0.5);
+    rightCalf.rotation.x = -Math.PI / 8;
+    group.add(rightCalf);
 
     return group;
 }
@@ -586,16 +694,16 @@ async function fetchLeaderboard() {
         const response = await fetch('/api/scores');
         const scores = await response.json();
         
+        console.log("Fetched leaderboard data:", scores); // Debug log
+        
         // Clear existing leaderboard
         leaderboardList.innerHTML = '';
         
-        // Add title and styling
+        // Add title
         const leaderboardTitle = document.createElement('h2');
         leaderboardTitle.textContent = 'Turbo Racing Leaderboard';
         leaderboardTitle.style.color = '#ff4500';
         leaderboardTitle.style.borderBottom = '2px solid #ff4500';
-        leaderboardTitle.style.paddingBottom = '10px';
-        leaderboardTitle.style.marginBottom = '20px';
         leaderboardList.appendChild(leaderboardTitle);
         
         // Add header row
@@ -608,15 +716,19 @@ async function fetchLeaderboard() {
         `;
         leaderboardList.appendChild(headerRow);
         
-        // Add each score as a styled row
+        // Add each score with proper username
         scores.forEach((score, index) => {
             const listItem = document.createElement('div');
             listItem.className = 'leaderboard-item';
+            
+            // Ensure username is displayed correctly
+            const displayUsername = score.username ? score.username : 'Anonymous';
+            
             listItem.innerHTML = `
                 <div class="rank">#${index + 1}</div>
                 <div class="player-info">
                     <div class="avatar"></div>
-                    <div class="username">@${score.username || 'Anonymous'}</div>
+                    <div class="username">@${displayUsername}</div>
                 </div>
                 <div class="score">${score.score}</div>
             `;

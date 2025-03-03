@@ -26,6 +26,9 @@ app.post('/api/scores', (req, res) => {
         date: new Date()
     });
     
+    console.log('Received score data:', req.body);
+    console.log('Current scores array:', scores);
+    
     res.status(201).json({ message: 'Score saved successfully' });
 });
 
