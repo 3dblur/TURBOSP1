@@ -46,6 +46,47 @@ scene.add(backLight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
+// Create a canvas-based texture for the SP1 power-up
+function createSP1Texture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    
+    // Background color (magenta)
+    ctx.fillStyle = '#FF00FF';
+    ctx.fillRect(0, 0, 128, 128);
+    
+    // White border
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(4, 4, 120, 120);
+    
+    // SP1 text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 32px Arial';
+    ctx.fillText('SP', 20, 50);
+    
+    // Circle with 1
+    ctx.beginPath();
+    ctx.arc(90, 40, 25, 0, Math.PI * 2);
+    ctx.fillStyle = 'white';
+    ctx.fill();
+    
+    ctx.fillStyle = '#FF00FF';
+    ctx.font = 'bold 32px Arial';
+    ctx.fillText('1', 82, 50);
+    
+    // Small square in bottom left
+    ctx.fillStyle = 'white';
+    ctx.fillRect(20, 80, 20, 20);
+    
+    return new THREE.CanvasTexture(canvas);
+}
+
+// Create the SP1 texture
+const sp1Texture = createSP1Texture();
+
 // Update the road/track creation with proper three-lane highway
 function createDetailedRoad() {
     const roadGroup = new THREE.Group();
@@ -66,24 +107,10 @@ function createDetailedRoad() {
     roadGroup.add(road);
 
     // Lane markers
-    function createLaneMarker(x, dashed = false) {
-        if (dashed) {
-            // Create dashed line segments
-            for (let z = -roadLength/2; z < roadLength/2; z += 20) {
-                const lineGeometry = new THREE.PlaneGeometry(0.3, 10);
-                const lineMaterial = new THREE.MeshPhongMaterial({ 
-                    color: 0xFFFFFF,
-                    emissive: 0x666666,
-                    side: THREE.DoubleSide
-                });
-                const line = new THREE.Mesh(lineGeometry, lineMaterial);
-                line.rotation.x = -Math.PI / 2;
-                line.position.set(x, -0.08, z);
-                roadGroup.add(line);
-            }
-        } else {
-            // Solid line
-            const lineGeometry = new THREE.PlaneGeometry(0.3, roadLength);
+    function createLaneMarker(x) {
+        // Create dashed line segments
+        for (let z = -roadLength/2; z < roadLength/2; z += 20) {
+            const lineGeometry = new THREE.PlaneGeometry(0.3, 10);
             const lineMaterial = new THREE.MeshPhongMaterial({ 
                 color: 0xFFFFFF,
                 emissive: 0x666666,
@@ -91,16 +118,14 @@ function createDetailedRoad() {
             });
             const line = new THREE.Mesh(lineGeometry, lineMaterial);
             line.rotation.x = -Math.PI / 2;
-            line.position.set(x, -0.08, 0);
+            line.position.set(x, -0.08, z);
             roadGroup.add(line);
         }
     }
 
-    // Create lane dividers
-    createLaneMarker(-5); // Left edge line (solid)
-    createLaneMarker(-roadWidth/6, true); // First lane divider (dashed)
-    createLaneMarker(roadWidth/6, true); // Second lane divider (dashed)
-    createLaneMarker(5); // Right edge line (solid)
+    // Create only the dashed lane dividers
+    createLaneMarker(-roadWidth/6); // First lane divider (dashed)
+    createLaneMarker(roadWidth/6);  // Second lane divider (dashed)
 
     // Add shoulders
     const shoulderWidth = 3;
@@ -290,46 +315,10 @@ const powerUps = [];
 
 const objects = [];
 
-function spawnObject() {
-    if (Math.random() < 0.02) {
-        const lanePosition = state.lanePositions[Math.floor(Math.random() * 3)];
-        const type = Math.random() < 0.7 ? 'obstacle' : 'powerUp';
-        
-        // Add different obstacle types
-        const obstacleTypes = ['box', 'cylinder', 'sphere'];
-        const obstacleType = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
-        
-        let geometry;
-        if (obstacleType === 'box') {
-            geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-        } else if (obstacleType === 'cylinder') {
-            geometry = new THREE.CylinderGeometry(0.25, 0.25, 0.5);
-        } else {
-            geometry = new THREE.SphereGeometry(0.25);
-        }
-
-        const object = {
-            mesh: new THREE.Mesh(
-                geometry,
-                new THREE.MeshPhongMaterial({ 
-                    color: type === 'obstacle' ? 0xffa500 : 0xff00ff,
-                    shininess: 30
-                })
-            ),
-            type,
-            z: -100 // Spawn far ahead of the player
-        };
-        
-        object.mesh.position.set(lanePosition, 0.25, object.z);
-        objects.push(object);
-        scene.add(object.mesh);
-    }
-}
-
 // Game State
 const state = {
     speed: 0.3,
-    maxSpeed: 0.8,
+    maxSpeed: 1.2,
     acceleration: 0.0002,
     bikeLane: 1,  // 0, 1, 2 for left, middle, right
     lanePositions: [-5, 0, 5], // Update lane positions to match new road width
@@ -338,6 +327,11 @@ const state = {
     gameOver: false,
     canChangeLane: true, // Add this to track if we can change lanes
     targetLane: 1, // Add this to track the target lane
+    powerUpsCollected: 0,
+    baseSpeed: 0.5,
+    speedMultiplier: 1,
+    obstacleCount: 0,  // Track obstacles for power-up spawning
+    adjacentObstacleThreshold: 4,  // Minimum power-ups needed before adjacent obstacles can appear
 };
 
 const keys = {};
@@ -378,22 +372,32 @@ function animate() {
     // Move objects towards the player
     objects.forEach((obj, index) => {
         obj.z += state.speed * 2;
-        obj.mesh.position.z = obj.z;
         
-        // Remove objects that have passed the player
-        if (obj.z > 10) {
-            scene.remove(obj.mesh);
-            objects.splice(index, 1);
+        // Update z position while maintaining y position
+        if (obj.type === 'powerUp') {
+            obj.mesh.position.z = obj.z;
+            // Rotate power-ups around y-axis only to keep text visible
+            obj.mesh.rotation.y += 0.01;
+        } else {
+            obj.mesh.position.z = obj.z;
         }
         
-        // Collision detection
         if (checkCollision(bike, obj.mesh)) {
             if (obj.type === 'obstacle') {
                 scene.remove(obj.mesh);
                 objects.splice(index, 1);
-                gameOver(); // Immediate game over on obstacle collision
+                gameOver();
             } else {
+                // Power-up collection with larger speed increases
                 state.score += 1;
+                state.powerUpsCollected += 1;
+                
+                // Every 10 power-ups, increase speed more significantly
+                if (state.powerUpsCollected % 10 === 0) {
+                    state.speedMultiplier += 0.5; // Increased from 1
+                    updateGameSpeed();
+                }
+                
                 scene.remove(obj.mesh);
                 objects.splice(index, 1);
             }
@@ -479,6 +483,10 @@ window.addEventListener('keydown', (e) => {
 function resetGame() {
     state.gameOver = false;
     state.score = 1;
+    state.obstacleCount = 0;
+    state.powerUpsCollected = 0;
+    state.speedMultiplier = 1;
+    state.speed = state.baseSpeed;
     scoreDisplay.textContent = state.score;
     bike.position.set(0, 0.3, 0);
     objects.forEach(obj => scene.remove(obj.mesh));
@@ -545,9 +553,9 @@ async function fetchLeaderboard() {
     }
 }
 
-// Add progressive difficulty
+// Update the game speed calculation
 function updateGameSpeed() {
-    state.speed += state.acceleration;
+    state.speed = state.baseSpeed * state.speedMultiplier;
     if (state.speed > state.maxSpeed) {
         state.speed = state.maxSpeed;
     }
@@ -555,4 +563,101 @@ function updateGameSpeed() {
 
 // Update camera initial position
 camera.position.set(0, 8, 15);
-camera.lookAt(0, 0, -5); 
+camera.lookAt(0, 0, -5);
+
+// Update the spawnObject function to adjust positions and sizes
+function spawnObject() {
+    if (Math.random() < 0.02) {
+        const shouldSpawnPowerUp = state.obstacleCount >= 2;
+        const type = shouldSpawnPowerUp ? 'powerUp' : 'obstacle';
+        
+        if (shouldSpawnPowerUp) {
+            state.obstacleCount = 0;
+        } else {
+            state.obstacleCount++;
+        }
+
+        const spawnAdjacent = type === 'obstacle' && 
+                             state.powerUpsCollected >= state.adjacentObstacleThreshold && 
+                             Math.random() < 0.3;
+
+        const lanePosition = state.lanePositions[Math.floor(Math.random() * 3)];
+        
+        let mesh;
+        
+        if (type === 'obstacle') {
+            // Create larger obstacle (2x thicker, 1.5x longer)
+            const geometry = new THREE.BoxGeometry(1.5, 0.6, 0.6); // Increased height and depth
+            const material = new THREE.MeshPhongMaterial({ 
+                color: 0xff6600,
+                shininess: 30
+            });
+            mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(lanePosition, 0.3, -100); // Adjusted height for obstacles
+        } else {
+            // Create SP1 power-up
+            const geometry = new THREE.BoxGeometry(1.6, 1.6, 1.6);
+            
+            // Create materials for each face with the SP1 texture
+            const materials = [];
+            for (let i = 0; i < 6; i++) {
+                materials.push(new THREE.MeshPhongMaterial({
+                    map: sp1Texture,
+                    emissive: 0xff00ff,
+                    emissiveIntensity: 0.3,
+                    shininess: 50
+                }));
+            }
+            
+            mesh = new THREE.Mesh(geometry, materials);
+            
+            // Position the SP1 block to float above the ground
+            mesh.position.set(lanePosition, 1.0, -100); // Raised position
+            
+            // Adjust rotation to make SP1 text more visible
+            mesh.rotation.x = 0; // No x rotation to keep it flat
+            mesh.rotation.y = Math.PI / 4; // Rotate slightly for visibility
+        }
+        
+        const object = {
+            mesh: mesh,
+            type: type,
+            z: -100,
+            rotationSpeed: type === 'powerUp' ? 0.02 : 0
+        };
+        
+        // Don't set position here since we already set it above
+        objects.push(object);
+        scene.add(object.mesh);
+
+        // Handle adjacent obstacles
+        if (spawnAdjacent) {
+            let adjacentLane;
+            if (lanePosition === state.lanePositions[0]) {
+                adjacentLane = state.lanePositions[1];
+            } else if (lanePosition === state.lanePositions[2]) {
+                adjacentLane = state.lanePositions[1];
+            } else {
+                adjacentLane = Math.random() < 0.5 ? state.lanePositions[0] : state.lanePositions[2];
+            }
+
+            // Create adjacent obstacle with same larger dimensions
+            const adjacentGeometry = new THREE.BoxGeometry(1.5, 0.6, 0.6);
+            const adjacentObject = {
+                mesh: new THREE.Mesh(
+                    adjacentGeometry,
+                    new THREE.MeshPhongMaterial({ 
+                        color: 0xff6600,
+                        shininess: 30
+                    })
+                ),
+                type: 'obstacle',
+                z: -100
+            };
+            
+            adjacentObject.mesh.position.set(adjacentLane, 0.3, -100);
+            objects.push(adjacentObject);
+            scene.add(adjacentObject.mesh);
+        }
+    }
+} 
