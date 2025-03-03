@@ -1,4 +1,4 @@
-body {
+/*body {
     margin: 0;
     overflow: hidden;
     background: #000000;
@@ -59,3 +59,99 @@ body {
     list-style: none;
     padding: 0;
 } 
+    */
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: #000000;
+    }
+    
+    #gameCanvas {
+        position: absolute; /* Changed to absolute to overlay properly */
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: block;
+        z-index: 1; /* Ensure canvas is below UI and icons */
+    }
+    
+    #ui {
+        position: fixed; /* Changed to fixed to stay in viewport */
+        top: 10px;
+        left: 10px;
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        background: rgba(255, 0, 0, 0.8);
+        padding: 5px 10px;
+        border-radius: 3px;
+        display: flex;
+        gap: 10px;
+        z-index: 15; /* Above canvas and icons */
+    }
+    
+    #ui button {
+        background: #ff0000;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        border-radius: 3px;
+    }
+    
+    #ui button:hover {
+        background: #ff4500; /* Slightly lighter on hover */
+    }
+    
+    #gameOverScreen, #leaderboard, #garage {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+        z-index: 9999; /* Ensure these popups are above everything */
+    }
+    
+    #gameOverScreen button, #leaderboard button, #garage button {
+        background: #ff0000;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        margin: 5px;
+        border-radius: 3px;
+    }
+    
+    #leaderboardList {
+        list-style: none;
+        padding: 0;
+    }
+    
+    /* Container for icons to stack them vertically in the top-right */
+    .icon-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        z-index: 10; /* Above canvas but below UI */
+    }
+    
+    /* Style for each icon */
+    .desktop-icon {
+        width: 50px;
+        height: auto;
+        cursor: pointer;
+    }
+    
+    /* Ensure links wrapping icons don’t affect layout */
+    .icon-container a {
+        display: block; /* Ensures each icon takes its own line */
+        line-height: 0; /* Removes extra space below images */
+    }

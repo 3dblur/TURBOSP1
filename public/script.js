@@ -27,7 +27,7 @@ speedNotification.style.fontWeight = 'bold';
 speedNotification.style.zIndex = '1000';
 speedNotification.style.display = 'none';
 document.body.appendChild(speedNotification);
-
+/*
 // Add username modal
 const usernameModal = document.createElement('div');
 usernameModal.id = 'usernameModal';
@@ -58,7 +58,102 @@ usernameContent.innerHTML = `
 
 usernameModal.appendChild(usernameContent);
 document.body.appendChild(usernameModal);
+*/
+// Add username modal
+// Add username modal
+const usernameModal = document.createElement('div');
+usernameModal.id = 'usernameModal';
+usernameModal.style.position = 'fixed';
+usernameModal.style.top = '0';
+usernameModal.style.left = '0';
+usernameModal.style.width = '100%';
+usernameModal.style.height = '100%';
+usernameModal.style.backgroundColor = 'rgba(255, 105, 180, 0.5)'; // Pinkish transparent background (hot pink)
+usernameModal.style.display = 'flex';
+usernameModal.style.justifyContent = 'center';
+usernameModal.style.alignItems = 'center';
+usernameModal.style.zIndex = '2000';
 
+const usernameContent = document.createElement('div');
+usernameContent.style.background = 'linear-gradient(180deg, #FF69B4, #FFC1CC)'; // Gradient from hot pink to light pink
+usernameContent.style.border = '2px solid #FF1493'; // Deep pink border
+usernameContent.style.padding = '15px'; // Adjusted padding
+usernameContent.style.width = '400px'; // Slightly wider for modern look
+usernameContent.style.boxShadow = 'inset 1px 1px 0px #FFB6C1, inset -1px -1px 0px #FF69B4, inset 2px 2px 0px #FFF, inset -2px -2px 0px #C71585'; // Pink beveled effect
+usernameContent.style.fontFamily = "'Chicago', 'Arial', sans-serif"; // Retro font (fallback to Arial)
+usernameContent.style.position = 'relative'; // For positioning window controls
+
+// Pink-themed HTML content with Mac OS 7-style window controls
+usernameContent.innerHTML = `
+    <div style="position: absolute; top: 5px; left: 5px; display: flex; gap: 5px;">
+        <button id="closeBtn" style="width: 12px; height: 12px; background: #FF4040; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
+        <button id="minimizeBtn" style="width: 12px; height: 12px; background: #FFBF00; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
+        <button id="maximizeBtn" style="width: 12px; height: 12px; background: #00FF00; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
+    </div>
+    <div style="font-size: 18px; font-weight: bold; text-align: center; margin-top: 20px; margin-bottom: 10px; color: #FFF; text-shadow: 1px 1px 0px #C71585;">
+        Enter Your Username
+    </div>
+    <div style="font-size: 14px; text-align: center; margin-bottom: 20px; color: #FFF; text-shadow: 1px 1px 0px #C71585;">
+        Please enter a username to track your scores on the leaderboard.
+    </div>
+    <input type="text" id="usernameInput" placeholder="Username" style="width: 100%; padding: 8px; margin-bottom: 20px; border: 2px solid #FF1493; background: #FFE4E1; font-family: 'Chicago', 'Arial', sans-serif; font-size: 14px; box-sizing: border-box; color: #C71585; text-align: center;">
+    <div style="text-align: center;">
+        <button id="startGameBtn" style="padding: 8px 20px; border: 2px solid #FF1493; background: #FF69B4; font-family: 'Chicago', 'Arial', sans-serif; font-size: 14px; cursor: pointer; color: #FFF; text-shadow: 1px 1px 0px #C71585;">Start Game</button>
+    </div>
+`;
+
+usernameModal.appendChild(usernameContent);
+document.body.appendChild(usernameModal);
+
+// Add retro font and button styles
+const style = document.createElement('style');
+style.textContent = `
+    @font-face {
+        font-family: 'Chicago';
+        src: url('https://db.onlinewebfonts.com/t/6b290d6c2d0432f8e4e7e3f0a6e8f2f6.woff') format('woff');
+    }
+    #startGameBtn:hover {
+        background: #FF1493; /* Deep pink on hover */
+    }
+    #startGameBtn:active {
+        background: #C71585; /* Darker pink when pressed */
+    }
+    #closeBtn:hover {
+        background: #FF6666;
+    }
+    #minimizeBtn:hover {
+        background: #FFD700;
+    }
+    #maximizeBtn:hover {
+        background: #33FF33;
+    }
+`;
+document.head.appendChild(style);
+
+// Add functionality for window control buttons (simulating Mac OS 7 behavior)
+document.getElementById('closeBtn').addEventListener('click', () => {
+    usernameModal.style.display = 'none'; // Close the modal
+});
+
+document.getElementById('minimizeBtn').addEventListener('click', () => {
+    usernameContent.style.transform = 'scale(0.1)';
+    usernameContent.style.opacity = '0.3';
+    setTimeout(() => {
+        usernameContent.style.transform = 'scale(1)';
+        usernameContent.style.opacity = '1';
+    }, 1000); // Simulate minimize/restore animation
+});
+
+document.getElementById('maximizeBtn').addEventListener('click', () => {
+    if (usernameContent.style.width === '400px') {
+        usernameContent.style.width = '600px';
+        usernameContent.style.height = '300px';
+    } else {
+        usernameContent.style.width = '400px';
+        usernameContent.style.height = '';
+    }
+});
+//endedit
 // Scene Setup
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -801,7 +896,9 @@ async function fetchLeaderboard() {
                 width: 30px;
                 height: 30px;
                 border-radius: 50%;
-                background-color: #444;
+                background-image: url('https://testnet.succinct.xyz/images/succinct-icon-pink.svg');
+                background-size: cover;
+                background-position: center;
                 margin-right: 10px;
             }
             .username {
@@ -837,7 +934,6 @@ async function fetchLeaderboard() {
         leaderboardList.innerHTML = '<li>Error loading leaderboard</li>';
     }
 }
-
 // Update the game speed calculation
 function updateGameSpeed() {
     state.speed = state.baseSpeed * state.speedMultiplier;

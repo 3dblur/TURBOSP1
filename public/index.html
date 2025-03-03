@@ -1,3 +1,4 @@
+<!--
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,3 +37,53 @@
     <script src="script.js"></script>
 </body>
 </html> 
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turbo Racing 3D</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/three@0.134.0/examples/js/loaders/SVGLoader.js"></script>
+</head>
+<body>
+    <div id="ui">
+        <div id="score">1</div>
+        <button id="leaderboard-btn">🏆 Leaderboard</button>
+        <button id="garage-btn">🚗 Garage</button>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <div class="icon-container">
+        <a href="https://x.com/succinctlabs" target="_blank">
+            <img src="/icon1.png" class="desktop-icon" alt="Icon 1">
+        </a>
+        <a href="https://x.com/pumatheuma" target="_blank">
+            <img src="/icon2.png" class="desktop-icon" alt="Icon 2">
+        </a>
+        <a href="https://x.com/3dblurss" target="_blank">
+            <img src="/icon3.png" class="desktop-icon" alt="Icon 3">
+        </a>
+    </div>
+    <div id="gameOverScreen" style="display: none;">
+        <h1>Game Over!</h1>
+        <p>Score: <span id="finalScore">0</span></p>
+        <p>Press ENTER to play again</p>
+        <p>High Score: <span id="highScore">1</span></p>
+        <button id="shareBtn">Share on X</button>
+        <button id="lockInBtn">Lock In</button>
+    </div>
+    <div id="leaderboard" style="display: none;">
+        <h2>Leaderboard</h2>
+        <ul id="leaderboardList"></ul>
+        <button id="closeLeaderboard">Close</button>
+    </div>
+    <div id="garage" style="display: none;">
+        <h2>Garage</h2>
+        <p>Coming Soon!</p>
+        <button id="closeGarage">Close</button>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
