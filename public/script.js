@@ -12,6 +12,53 @@ const leaderboard = document.getElementById('leaderboard');
 const leaderboardList = document.getElementById('leaderboardList');
 const garage = document.getElementById('garage');
 
+// Add these elements to the top of the file
+const speedNotification = document.createElement('div');
+speedNotification.id = 'speedNotification';
+speedNotification.style.position = 'absolute';
+speedNotification.style.top = '20px';
+speedNotification.style.left = '50%';
+speedNotification.style.transform = 'translateX(-50%)';
+speedNotification.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+speedNotification.style.color = '#fff';
+speedNotification.style.padding = '10px 20px';
+speedNotification.style.borderRadius = '5px';
+speedNotification.style.fontWeight = 'bold';
+speedNotification.style.zIndex = '1000';
+speedNotification.style.display = 'none';
+document.body.appendChild(speedNotification);
+
+// Add username modal
+const usernameModal = document.createElement('div');
+usernameModal.id = 'usernameModal';
+usernameModal.style.position = 'fixed';
+usernameModal.style.top = '0';
+usernameModal.style.left = '0';
+usernameModal.style.width = '100%';
+usernameModal.style.height = '100%';
+usernameModal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+usernameModal.style.display = 'flex';
+usernameModal.style.justifyContent = 'center';
+usernameModal.style.alignItems = 'center';
+usernameModal.style.zIndex = '2000';
+
+const usernameContent = document.createElement('div');
+usernameContent.style.backgroundColor = '#fff';
+usernameContent.style.padding = '30px';
+usernameContent.style.borderRadius = '10px';
+usernameContent.style.textAlign = 'center';
+usernameContent.style.maxWidth = '400px';
+
+usernameContent.innerHTML = `
+    <h2>Enter Your Username</h2>
+    <p>Please enter a username to track your scores on the leaderboard.</p>
+    <input type="text" id="usernameInput" placeholder="Username" style="padding: 10px; width: 100%; margin: 20px 0; box-sizing: border-box;">
+    <button id="startGameBtn" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Start Game</button>
+`;
+
+usernameModal.appendChild(usernameContent);
+document.body.appendChild(usernameModal);
+
 // Scene Setup
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -20,7 +67,7 @@ const renderer = new THREE.WebGLRenderer({
     antialias: true,
     alpha: true // Add this to ensure proper canvas initialization
 });
-renderer.setClearColor(0x87CEEB); // Add this to set sky blue background color
+renderer.setClearColor(0x000000); // Black background for space
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -96,14 +143,14 @@ function createDetailedRoad() {
     const roadLength = 1000;
     const roadGeometry = new THREE.PlaneGeometry(roadWidth, roadLength, 20, 1000);
     const roadMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x404040, // Darker asphalt color
+        color: 0x222222, // Darker asphalt color (almost black)
         roughness: 0.8,
         metalness: 0.2,
         side: THREE.DoubleSide
     });
     const road = new THREE.Mesh(roadGeometry, roadMaterial);
     road.rotation.x = -Math.PI / 2;
-    road.position.y = -0.1;
+    road.position.y = 0; // Raise slightly above the grid
     roadGroup.add(road);
 
     // Lane markers
@@ -118,7 +165,7 @@ function createDetailedRoad() {
             });
             const line = new THREE.Mesh(lineGeometry, lineMaterial);
             line.rotation.x = -Math.PI / 2;
-            line.position.set(x, -0.08, z);
+            line.position.set(x, 0.01, z); // Slightly above road
             roadGroup.add(line);
         }
     }
@@ -131,7 +178,7 @@ function createDetailedRoad() {
     const shoulderWidth = 3;
     const shoulderGeometry = new THREE.PlaneGeometry(shoulderWidth, roadLength);
     const shoulderMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x666666, // Lighter gray for shoulders
+        color: 0x333333, // Darker gray for shoulders
         roughness: 1,
         side: THREE.DoubleSide
     });
@@ -139,35 +186,16 @@ function createDetailedRoad() {
     // Left shoulder
     const leftShoulder = new THREE.Mesh(shoulderGeometry, shoulderMaterial);
     leftShoulder.rotation.x = -Math.PI / 2;
-    leftShoulder.position.set(-roadWidth/2 - shoulderWidth/2, -0.11, 0);
+    leftShoulder.position.set(-roadWidth/2 - shoulderWidth/2, -0.01, 0);
     roadGroup.add(leftShoulder);
 
     // Right shoulder
     const rightShoulder = new THREE.Mesh(shoulderGeometry, shoulderMaterial);
     rightShoulder.rotation.x = -Math.PI / 2;
-    rightShoulder.position.set(roadWidth/2 + shoulderWidth/2, -0.11, 0);
+    rightShoulder.position.set(roadWidth/2 + shoulderWidth/2, -0.01, 0);
     roadGroup.add(rightShoulder);
 
-    // Add grass on sides
-    const grassWidth = 30;
-    const grassGeometry = new THREE.PlaneGeometry(grassWidth, roadLength);
-    const grassMaterial = new THREE.MeshPhongMaterial({
-        color: 0x1a8f3c, // Grass green
-        roughness: 1,
-        side: THREE.DoubleSide
-    });
-
-    // Left grass
-    const leftGrass = new THREE.Mesh(grassGeometry, grassMaterial);
-    leftGrass.rotation.x = -Math.PI / 2;
-    leftGrass.position.set(-roadWidth/2 - shoulderWidth - grassWidth/2, -0.12, 0);
-    roadGroup.add(leftGrass);
-
-    // Right grass
-    const rightGrass = new THREE.Mesh(grassGeometry, grassMaterial);
-    rightGrass.rotation.x = -Math.PI / 2;
-    rightGrass.position.set(roadWidth/2 + shoulderWidth + grassWidth/2, -0.12, 0);
-    roadGroup.add(rightGrass);
+    // Remove grass sections
 
     return roadGroup;
 }
@@ -332,6 +360,7 @@ const state = {
     speedMultiplier: 1,
     obstacleCount: 0,  // Track obstacles for power-up spawning
     adjacentObstacleThreshold: 4,  // Minimum power-ups needed before adjacent obstacles can appear
+    username: '',
 };
 
 const keys = {};
@@ -382,6 +411,14 @@ function animate() {
             obj.mesh.position.z = obj.z;
         }
         
+        // Remove objects that have passed the player
+        if (obj.z > 10) {
+            scene.remove(obj.mesh);
+            objects.splice(index, 1);
+            return; // Skip collision check for removed objects
+        }
+        
+        // Collision detection
         if (checkCollision(bike, obj.mesh)) {
             if (obj.type === 'obstacle') {
                 scene.remove(obj.mesh);
@@ -394,8 +431,9 @@ function animate() {
                 
                 // Every 10 power-ups, increase speed more significantly
                 if (state.powerUpsCollected % 10 === 0) {
-                    state.speedMultiplier += 0.5; // Increased from 1
+                    state.speedMultiplier += 0.5;
                     updateGameSpeed();
+                    showSpeedNotification(state.speedMultiplier);
                 }
                 
                 scene.remove(obj.mesh);
@@ -466,11 +504,15 @@ animate();
 function gameOver() {
     state.gameOver = true;
     finalScoreDisplay.textContent = state.score;
+    
+    // Save score with username
+    saveHighScore(state.score);
+    
     if (state.score > state.highScore) {
         state.highScore = state.score;
         highScoreDisplay.textContent = state.highScore;
-        saveHighScore(state.highScore);
     }
+    
     gameOverScreen.style.display = 'block';
 }
 
@@ -481,18 +523,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 function resetGame() {
-    state.gameOver = false;
-    state.score = 1;
-    state.obstacleCount = 0;
-    state.powerUpsCollected = 0;
-    state.speedMultiplier = 1;
-    state.speed = state.baseSpeed;
-    scoreDisplay.textContent = state.score;
-    bike.position.set(0, 0.3, 0);
-    objects.forEach(obj => scene.remove(obj.mesh));
-    objects.length = 0;
-    gameOverScreen.style.display = 'none';
-    animate();
+    startGame();
 }
 
 // UI Interactions
@@ -533,11 +564,18 @@ window.addEventListener('resize', () => {
 // Backend Integration (fetch/save high scores)
 async function saveHighScore(score) {
     try {
-        await fetch('http://localhost:3000/api/scores', {
+        const response = await fetch('/api/scores', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ score })
+            body: JSON.stringify({ 
+                username: state.username || 'Anonymous',
+                score 
+            })
         });
+        console.log('Score saved with username:', state.username);
+        
+        // Fetch updated leaderboard
+        fetchLeaderboard();
     } catch (error) {
         console.error('Error saving score:', error);
     }
@@ -545,11 +583,128 @@ async function saveHighScore(score) {
 
 async function fetchLeaderboard() {
     try {
-        const response = await fetch('http://localhost:3000/api/scores');
+        const response = await fetch('/api/scores');
         const scores = await response.json();
-        leaderboardList.innerHTML = scores.map((s, i) => `<li>${i + 1}. ${s.score}</li>`).join('');
+        
+        // Clear existing leaderboard
+        leaderboardList.innerHTML = '';
+        
+        // Add title and styling
+        const leaderboardTitle = document.createElement('h2');
+        leaderboardTitle.textContent = 'Turbo Racing Leaderboard';
+        leaderboardTitle.style.color = '#ff4500';
+        leaderboardTitle.style.borderBottom = '2px solid #ff4500';
+        leaderboardTitle.style.paddingBottom = '10px';
+        leaderboardTitle.style.marginBottom = '20px';
+        leaderboardList.appendChild(leaderboardTitle);
+        
+        // Add header row
+        const headerRow = document.createElement('div');
+        headerRow.className = 'leaderboard-header';
+        headerRow.innerHTML = `
+            <div class="rank">RANK</div>
+            <div class="name">NAME</div>
+            <div class="score">SCORE</div>
+        `;
+        leaderboardList.appendChild(headerRow);
+        
+        // Add each score as a styled row
+        scores.forEach((score, index) => {
+            const listItem = document.createElement('div');
+            listItem.className = 'leaderboard-item';
+            listItem.innerHTML = `
+                <div class="rank">#${index + 1}</div>
+                <div class="player-info">
+                    <div class="avatar"></div>
+                    <div class="username">@${score.username || 'Anonymous'}</div>
+                </div>
+                <div class="score">${score.score}</div>
+            `;
+            leaderboardList.appendChild(listItem);
+        });
+        
+        // Add pagination controls
+        const paginationControls = document.createElement('div');
+        paginationControls.className = 'pagination';
+        paginationControls.innerHTML = `
+            <button class="prev-btn">< Previous</button>
+            <div class="page-number">1</div>
+            <button class="next-btn">Next ></button>
+        `;
+        leaderboardList.appendChild(paginationControls);
+        
+        // Add CSS for the leaderboard
+        const style = document.createElement('style');
+        style.textContent = `
+            #leaderboard {
+                background-color: #000;
+                border: 2px solid #ff4500;
+                color: #fff;
+                padding: 20px;
+                min-width: 400px;
+            }
+            .leaderboard-header {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 15px;
+                color: #ffd700;
+                font-weight: bold;
+            }
+            .leaderboard-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px 0;
+                border-bottom: 1px solid #333;
+            }
+            .rank {
+                width: 50px;
+                font-weight: bold;
+                color: #fff;
+            }
+            .player-info {
+                display: flex;
+                align-items: center;
+                flex-grow: 1;
+            }
+            .avatar {
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                background-color: #444;
+                margin-right: 10px;
+            }
+            .username {
+                color: #fff;
+            }
+            .score {
+                font-weight: bold;
+                color: #ff4500;
+                min-width: 60px;
+                text-align: right;
+            }
+            .pagination {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-top: 20px;
+            }
+            .pagination button {
+                background: transparent;
+                color: #fff;
+                border: none;
+                cursor: pointer;
+            }
+            .page-number {
+                margin: 0 15px;
+                padding: 5px 15px;
+                border: 1px solid #ff4500;
+            }
+        `;
+        document.head.appendChild(style);
     } catch (error) {
         console.error('Error fetching leaderboard:', error);
+        leaderboardList.innerHTML = '<li>Error loading leaderboard</li>';
     }
 }
 
@@ -660,4 +815,118 @@ function spawnObject() {
             scene.add(adjacentObject.mesh);
         }
     }
-} 
+}
+
+// Show speed notification
+function showSpeedNotification(multiplier) {
+    speedNotification.textContent = `Speed Increased! (${multiplier.toFixed(1)}x)`;
+    speedNotification.style.display = 'block';
+    
+    // Hide after 3 seconds
+    setTimeout(() => {
+        speedNotification.style.display = 'none';
+    }, 3000);
+}
+
+// Fix for the game start sequence
+function startGame() {
+    // Reset game state
+    state.gameOver = false;
+    state.score = 1;
+    state.obstacleCount = 0;
+    state.powerUpsCollected = 0;
+    state.speedMultiplier = 1;
+    state.speed = state.baseSpeed;
+    scoreDisplay.textContent = state.score;
+    
+    // Reset bike position
+    bike.position.set(0, 0.3, 0);
+    
+    // Clear any existing objects
+    objects.forEach(obj => scene.remove(obj.mesh));
+    objects.length = 0;
+    
+    // Hide game over screen
+    gameOverScreen.style.display = 'none';
+    
+    // Start animation loop
+    animate();
+}
+
+// Update the start game button event listener
+document.getElementById('startGameBtn').addEventListener('click', () => {
+    const usernameInput = document.getElementById('usernameInput');
+    state.username = usernameInput.value.trim() || 'Anonymous';
+    console.log('Username set to:', state.username);
+    usernameModal.style.display = 'none';
+    
+    // Start the game
+    startGame();
+});
+
+// Prevent the game from starting automatically
+window.onload = function() {
+    // Don't start animate() here - wait for username
+    camera.position.set(0, 8, 15);
+    camera.lookAt(0, 0, -5);
+    renderer.render(scene, camera);
+};
+
+// Add this function after the scene setup but before the animate function
+function createSpaceEnvironment() {
+    // Create pink grid floor - place it below the road
+    const gridHelper = new THREE.GridHelper(1000, 100, 0xff69b4, 0xff69b4);
+    gridHelper.position.y = -0.2; // Lower position to be below the road
+    scene.add(gridHelper);
+    
+    // Create starfield
+    const starCount = 1000;
+    const starsGeometry = new THREE.BufferGeometry();
+    const starPositions = new Float32Array(starCount * 3);
+    
+    for (let i = 0; i < starCount; i++) {
+        starPositions[i * 3] = (Math.random() - 0.5) * 200;
+        starPositions[i * 3 + 1] = Math.random() * 100;
+        starPositions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+    }
+    
+    starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    
+    const starMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.2,
+        transparent: true,
+        opacity: 0.8
+    });
+    
+    const stars = new THREE.Points(starsGeometry, starMaterial);
+    scene.add(stars);
+    
+    // Add a distant light beam
+    const beamGeometry = new THREE.CylinderGeometry(0.1, 0.1, 50, 32);
+    const beamMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.8
+    });
+    const beam = new THREE.Mesh(beamGeometry, beamMaterial);
+    beam.position.set(0, 25, -200);
+    scene.add(beam);
+    
+    // Add a glowing base for the beam
+    const baseGeometry = new THREE.CircleGeometry(2, 32);
+    const baseMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00faff,
+        transparent: true,
+        opacity: 0.5
+    });
+    const baseGlow = new THREE.Mesh(baseGeometry, baseMaterial);
+    baseGlow.rotateX(-Math.PI / 2);
+    baseGlow.position.set(0, 0.01, -200);
+    scene.add(baseGlow);
+    
+    return { stars, gridHelper, beam, baseGlow };
+}
+
+// Call this function right after scene setup
+const spaceElements = createSpaceEnvironment(); 

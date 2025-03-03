@@ -2,10 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());11
+app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 console.log('Serving static files from:', path.join(__dirname, '../public'));
 
@@ -13,15 +13,27 @@ console.log('Serving static files from:', path.join(__dirname, '../public'));
 let scores = [];
 
 app.post('/api/scores', (req, res) => {
-    const { score } = req.body;
-    scores.push({ score, timestamp: new Date() });
-    scores.sort((a, b) => b.score - a.score); // Sort descending
-    scores = scores.slice(0, 10); // Keep top 10
-    res.json({ success: true });
+    const { username, score } = req.body;
+    
+    if (!score) {
+        return res.status(400).json({ error: 'Score is required' });
+    }
+    
+    // Add the new score with username
+    scores.push({
+        username: username || 'Anonymous',
+        score: parseInt(score),
+        date: new Date()
+    });
+    
+    res.status(201).json({ message: 'Score saved successfully' });
 });
 
 app.get('/api/scores', (req, res) => {
-    res.json(scores);
+    // Sort scores by highest first
+    const sortedScores = [...scores].sort((a, b) => b.score - a.score);
+    // Return top 10 scores
+    res.json(sortedScores.slice(0, 10));
 });
 
 app.get('/healthcheck', (req, res) => {
