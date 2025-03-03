@@ -46,68 +46,103 @@ scene.add(backLight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-// Update the road/track creation with more detail
+// Update the road/track creation with proper three-lane highway
 function createDetailedRoad() {
     const roadGroup = new THREE.Group();
     
-    // Main road (wider and more detailed)
-    const roadGeometry = new THREE.PlaneGeometry(6, 1000, 20, 1000);
+    // Main road (three lanes)
+    const roadWidth = 15; // Wider road for three lanes
+    const roadLength = 1000;
+    const roadGeometry = new THREE.PlaneGeometry(roadWidth, roadLength, 20, 1000);
     const roadMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x333333,
+        color: 0x404040, // Darker asphalt color
         roughness: 0.8,
-        metalness: 0.2
+        metalness: 0.2,
+        side: THREE.DoubleSide
     });
     const road = new THREE.Mesh(roadGeometry, roadMaterial);
     road.rotation.x = -Math.PI / 2;
     road.position.y = -0.1;
     roadGroup.add(road);
 
-    // Road lines
-    const lineGeometry = new THREE.PlaneGeometry(0.15, 1000);
-    const lineMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0xFFFFFF,
-        emissive: 0x666666
-    });
-
-    // Center lines (dashed)
-    for (let i = 0; i < 50; i++) {
-        const line = new THREE.Mesh(lineGeometry, lineMaterial);
-        line.rotation.x = -Math.PI / 2;
-        line.position.z = -i * 20;
-        line.position.y = -0.09;
-        roadGroup.add(line);
+    // Lane markers
+    function createLaneMarker(x, dashed = false) {
+        if (dashed) {
+            // Create dashed line segments
+            for (let z = -roadLength/2; z < roadLength/2; z += 20) {
+                const lineGeometry = new THREE.PlaneGeometry(0.3, 10);
+                const lineMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0xFFFFFF,
+                    emissive: 0x666666,
+                    side: THREE.DoubleSide
+                });
+                const line = new THREE.Mesh(lineGeometry, lineMaterial);
+                line.rotation.x = -Math.PI / 2;
+                line.position.set(x, -0.08, z);
+                roadGroup.add(line);
+            }
+        } else {
+            // Solid line
+            const lineGeometry = new THREE.PlaneGeometry(0.3, roadLength);
+            const lineMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xFFFFFF,
+                emissive: 0x666666,
+                side: THREE.DoubleSide
+            });
+            const line = new THREE.Mesh(lineGeometry, lineMaterial);
+            line.rotation.x = -Math.PI / 2;
+            line.position.set(x, -0.08, 0);
+            roadGroup.add(line);
+        }
     }
 
-    // Side lines (continuous)
-    const sideLineGeometry = new THREE.PlaneGeometry(0.15, 1000);
-    const leftLine = new THREE.Mesh(sideLineGeometry, lineMaterial);
-    const rightLine = new THREE.Mesh(sideLineGeometry, lineMaterial);
-    
-    leftLine.rotation.x = -Math.PI / 2;
-    rightLine.rotation.x = -Math.PI / 2;
-    leftLine.position.set(-3, -0.09, 0);
-    rightLine.position.set(3, -0.09, 0);
-    
-    roadGroup.add(leftLine);
-    roadGroup.add(rightLine);
+    // Create lane dividers
+    createLaneMarker(-5); // Left edge line (solid)
+    createLaneMarker(-roadWidth/6, true); // First lane divider (dashed)
+    createLaneMarker(roadWidth/6, true); // Second lane divider (dashed)
+    createLaneMarker(5); // Right edge line (solid)
 
-    // Add road shoulders
-    const shoulderGeometry = new THREE.PlaneGeometry(2, 1000);
+    // Add shoulders
+    const shoulderWidth = 3;
+    const shoulderGeometry = new THREE.PlaneGeometry(shoulderWidth, roadLength);
     const shoulderMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x666666,
-        roughness: 1
+        color: 0x666666, // Lighter gray for shoulders
+        roughness: 1,
+        side: THREE.DoubleSide
     });
 
+    // Left shoulder
     const leftShoulder = new THREE.Mesh(shoulderGeometry, shoulderMaterial);
-    const rightShoulder = new THREE.Mesh(shoulderGeometry, shoulderMaterial);
-    
     leftShoulder.rotation.x = -Math.PI / 2;
-    rightShoulder.rotation.x = -Math.PI / 2;
-    leftShoulder.position.set(-4, -0.11, 0);
-    rightShoulder.position.set(4, -0.11, 0);
-    
+    leftShoulder.position.set(-roadWidth/2 - shoulderWidth/2, -0.11, 0);
     roadGroup.add(leftShoulder);
+
+    // Right shoulder
+    const rightShoulder = new THREE.Mesh(shoulderGeometry, shoulderMaterial);
+    rightShoulder.rotation.x = -Math.PI / 2;
+    rightShoulder.position.set(roadWidth/2 + shoulderWidth/2, -0.11, 0);
     roadGroup.add(rightShoulder);
+
+    // Add grass on sides
+    const grassWidth = 30;
+    const grassGeometry = new THREE.PlaneGeometry(grassWidth, roadLength);
+    const grassMaterial = new THREE.MeshPhongMaterial({
+        color: 0x1a8f3c, // Grass green
+        roughness: 1,
+        side: THREE.DoubleSide
+    });
+
+    // Left grass
+    const leftGrass = new THREE.Mesh(grassGeometry, grassMaterial);
+    leftGrass.rotation.x = -Math.PI / 2;
+    leftGrass.position.set(-roadWidth/2 - shoulderWidth - grassWidth/2, -0.12, 0);
+    roadGroup.add(leftGrass);
+
+    // Right grass
+    const rightGrass = new THREE.Mesh(grassGeometry, grassMaterial);
+    rightGrass.rotation.x = -Math.PI / 2;
+    rightGrass.position.set(roadWidth/2 + shoulderWidth + grassWidth/2, -0.12, 0);
+    roadGroup.add(rightGrass);
 
     return roadGroup;
 }
@@ -257,7 +292,7 @@ const objects = [];
 
 function spawnObject() {
     if (Math.random() < 0.02) {
-        const lane = Math.floor(Math.random() * 3) * 2 - 2;
+        const lanePosition = state.lanePositions[Math.floor(Math.random() * 3)];
         const type = Math.random() < 0.7 ? 'obstacle' : 'powerUp';
         
         // Add different obstacle types
@@ -282,10 +317,10 @@ function spawnObject() {
                 })
             ),
             type,
-            z: 50
+            z: -100 // Spawn far ahead of the player
         };
         
-        object.mesh.position.set(lane, 0.25, object.z);
+        object.mesh.position.set(lanePosition, 0.25, object.z);
         objects.push(object);
         scene.add(object.mesh);
     }
@@ -296,7 +331,8 @@ const state = {
     speed: 0.3,
     maxSpeed: 0.8,
     acceleration: 0.0002,
-    bikeLane: 1, // 0, 1, 2 for left, middle, right
+    bikeLane: 1,  // 0, 1, 2 for left, middle, right
+    lanePositions: [-5, 0, 5], // Update lane positions to match new road width
     score: 1,
     highScore: 1,
     gameOver: false
@@ -314,7 +350,7 @@ window.addEventListener('keyup', (e) => {
     keys[e.key] = false;
 });
 
-// Update the animation loop to fix wheel rotation
+// Update the animation loop to move objects towards the player
 function animate() {
     if (state.gameOver) return;
 
@@ -326,25 +362,28 @@ function animate() {
         road.position.z = 0;
     }
 
-    // Update bike controls
     updateControls();
+    updateGameSpeed();
 
     // Rotate wheels realistically
-    const wheelRotationSpeed = state.speed * 10; // Adjust this multiplier for realistic rotation
+    const wheelRotationSpeed = state.speed * 10;
     bike.children.forEach(child => {
-        if (child.isGroup) { // Check if it's a wheel group
+        if (child.isGroup) {
             child.rotation.x += wheelRotationSpeed;
         }
     });
 
-    // Move objects
+    // Move objects towards the player
     objects.forEach((obj, index) => {
-        obj.z -= state.speed;
+        obj.z += state.speed * 2; // Objects move towards the player
         obj.mesh.position.z = obj.z;
-        if (obj.z < -50) {
+        
+        // Remove objects that have passed the player
+        if (obj.z > 10) {
             scene.remove(obj.mesh);
             objects.splice(index, 1);
         }
+        
         // Collision detection
         if (checkCollision(bike, obj.mesh)) {
             if (obj.type === 'obstacle') {
@@ -365,9 +404,9 @@ function animate() {
 
     // Update camera to follow bike more smoothly
     const idealOffset = new THREE.Vector3(
-        bike.position.x * 0.8, // Smoother horizontal following
-        4, // Higher camera position
-        8 // Further back
+        bike.position.x * 0.8,
+        8,
+        15
     );
     camera.position.lerp(idealOffset, 0.05);
     camera.lookAt(bike.position.x * 0.5, 0, bike.position.z - 5);
@@ -378,12 +417,16 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// Update the bike controls for smoother movement
+// Update the bike controls for three lanes
 function updateControls() {
-    if (keys['ArrowLeft'] && state.bikeLane > 0) state.bikeLane--;
-    if (keys['ArrowRight'] && state.bikeLane < 2) state.bikeLane++;
+    if (keys['ArrowLeft'] && state.bikeLane > 0) {
+        state.bikeLane--;
+    }
+    if (keys['ArrowRight'] && state.bikeLane < 2) {
+        state.bikeLane++;
+    }
     
-    const targetX = (state.bikeLane - 1) * 2;
+    const targetX = state.lanePositions[state.bikeLane];
     const currentX = bike.position.x;
     
     // Smooth position transition
@@ -499,5 +542,5 @@ function updateGameSpeed() {
 }
 
 // Update camera initial position
-camera.position.set(0, 5, 10);
-camera.lookAt(0, 0, 0); 
+camera.position.set(0, 8, 15);
+camera.lookAt(0, 0, -5); 
