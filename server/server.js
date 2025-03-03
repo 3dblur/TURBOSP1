@@ -15,24 +15,30 @@ let scores = [];
 app.post('/api/scores', (req, res) => {
     const { username, score } = req.body;
     
+    console.log('Received score data:', req.body);
+    
     if (!score) {
         return res.status(400).json({ error: 'Score is required' });
+    }
+
+    if (!username) {
+        return res.status(400).json({ error: 'Username is required' });
     }
     
     // Add the new score with username
     scores.push({
-        username: username || 'Anonymous',
+        username: username,
         score: parseInt(score),
         date: new Date()
     });
     
-    console.log('Received score data:', req.body);
-    console.log('Current scores array:', scores);
+    console.log('Updated scores array:', scores);
     
     res.status(201).json({ message: 'Score saved successfully' });
 });
 
 app.get('/api/scores', (req, res) => {
+    console.log('Sending scores:', scores);
     // Sort scores by highest first
     const sortedScores = [...scores].sort((a, b) => b.score - a.score);
     // Return top 10 scores

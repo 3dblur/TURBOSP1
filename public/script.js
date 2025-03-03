@@ -53,7 +53,7 @@ usernameContent.innerHTML = `
     <h2>Enter Your Username</h2>
     <p>Please enter a username to track your scores on the leaderboard.</p>
     <input type="text" id="usernameInput" placeholder="Username" style="padding: 10px; width: 100%; margin: 20px 0; box-sizing: border-box;">
-    <button id="startGameBtn" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Start Game</button>
+    <button id="startGameBtn" style="padding: 10px 20px; background-color:rgb(192, 46, 190); color: white; border: none; border-radius: 5px; cursor: pointer;">Start Game</button>
 `;
 
 usernameModal.appendChild(usernameContent);
@@ -484,6 +484,8 @@ window.addEventListener('keyup', (e) => {
 });
 
 // Update the animation loop to move objects towards the player
+
+
 function animate() {
     if (state.gameOver) return;
 
@@ -547,7 +549,13 @@ function animate() {
                 scene.remove(obj.mesh);
                 objects.splice(index, 1);
             }
-        }
+        }//spaceElements.stars.position.z += state.speed;
+
+    // Reset the starfield position when it moves too far
+    if (spaceElements.stars.position.z > 100) {
+        spaceElements.stars.position.z = -100; // Adjust these values based on your scene
+    }
+        
     });
 
     // Spawn new objects
@@ -605,13 +613,15 @@ function checkCollision(obj1, obj2) {
     const box2 = new THREE.Box3().setFromObject(obj2);
     return box1.intersectsBox(box2);
 }
-
-animate();
+/*
+animate();*/
 
 // Game Over Logic
 function gameOver() {
     state.gameOver = true;
     finalScoreDisplay.textContent = state.score;
+    
+    console.log('Game over - username:', state.username);
     
     // Save score with username
     saveHighScore(state.score);
@@ -672,15 +682,23 @@ window.addEventListener('resize', () => {
 // Backend Integration (fetch/save high scores)
 async function saveHighScore(score) {
     try {
+        // Add detailed console logging
+        console.log('Saving score with:', {
+            username: state.username,
+            score: score
+        });
+        
         const response = await fetch('/api/scores', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                username: state.username || 'Anonymous',
-                score 
+                username: state.username,
+                score: score
             })
         });
-        console.log('Score saved with username:', state.username);
+        
+        const result = await response.json();
+        console.log('Server response:', result);
         
         // Fetch updated leaderboard
         fetchLeaderboard();
@@ -968,13 +986,29 @@ function startGame() {
 // Update the start game button event listener
 document.getElementById('startGameBtn').addEventListener('click', () => {
     const usernameInput = document.getElementById('usernameInput');
-    state.username = usernameInput.value.trim() || 'Anonymous';
+    const username = usernameInput.value.trim();
+    
+    if (!username) {
+        alert('Please enter a username.');
+        return;
+    }
+    
+    state.username = username;
     console.log('Username set to:', state.username);
     usernameModal.style.display = 'none';
     
     // Start the game
     startGame();
 });
+//document.getElementById('startGameBtn').addEventListener('click', () => {
+  //  const usernameInput = document.getElementById('usernameInput');
+    //state.username = usernameInput.value.trim() || 'Anonymous';
+    //console.log('Username set to:', state.username);
+    //usernameModal.style.display = 'none';
+    
+    // Start the game
+    //startGame();
+//});
 
 // Prevent the game from starting automatically
 window.onload = function() {
@@ -985,7 +1019,7 @@ window.onload = function() {
 };
 
 // Add this function after the scene setup but before the animate function
-function createSpaceEnvironment() {
+/*function createSpaceEnvironment() {
     // Create pink grid floor - place it below the road
     const gridHelper = new THREE.GridHelper(1000, 100, 0xff69b4, 0xff69b4);
     gridHelper.position.y = -0.2; // Lower position to be below the road
@@ -1014,30 +1048,70 @@ function createSpaceEnvironment() {
     const stars = new THREE.Points(starsGeometry, starMaterial);
     scene.add(stars);
     
-    // Add a distant light beam
-    const beamGeometry = new THREE.CylinderGeometry(0.1, 0.1, 50, 32);
-    const beamMaterial = new THREE.MeshBasicMaterial({
+    // Return only the stars and grid helper
+    return { stars, gridHelper };
+}
+*/
+function createSpaceEnvironment() {
+    // Create pink grid floor - place it below the road
+    const gridHelper = new THREE.GridHelper(1000, 100, 0xff69b4, 0xff69b4);
+    gridHelper.position.y = -0.2; // Lower position to be below the road
+    scene.add(gridHelper);
+    
+    // Create starfield
+    const starCount = 1000;
+    const starsGeometry = new THREE.BufferGeometry();
+    const starPositions = [];
+    
+    // Define road boundaries
+    const roadMinX = -10.5; // Road width including shoulders
+    const roadMaxX = 10.5;
+    const roadMaxY = 5; // Maximum height above the road to consider "close"
+    const roadMinZ = -500; // Road extends from z = -500 (based on road length 1000)
+    const roadMaxZ = 500;
+
+    // Generate star positions, filtering out those near the road
+    for (let i = 0; i < starCount; i++) {
+        const x = (Math.random() - 0.5) * 200; // x: -100 to 100
+        const y = Math.random() * 100;          // y: 0 to 100
+        const z = (Math.random() - 0.5) * 200; // z: -100 to 100
+
+        // Skip stars that are within the road's x-range AND below the height threshold
+        if (x >= roadMinX && x <= roadMaxX && y <= roadMaxY) {
+            continue; // Skip this star
+        }
+
+        // Add star to positions array
+        starPositions.push(x, y, z);
+    }
+
+    // Convert star positions to Float32Array for BufferGeometry
+    const starPositionsArray = new Float32Array(starPositions);
+    starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositionsArray, 3));
+    
+    const starMaterial = new THREE.PointsMaterial({
         color: 0xffffff,
+        size: 0.2,
         transparent: true,
         opacity: 0.8
     });
-    const beam = new THREE.Mesh(beamGeometry, beamMaterial);
-    beam.position.set(0, 25, -200);
-    scene.add(beam);
     
-    // Add a glowing base for the beam
-    const baseGeometry = new THREE.CircleGeometry(2, 32);
-    const baseMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00faff,
-        transparent: true,
-        opacity: 0.5
+    const stars = new THREE.Points(starsGeometry, starMaterial);
+    scene.add(stars);
+    const loader = new THREE.TextureLoader();
+    const logoTexture = loader.load('/logo.png'); // Load the PNG from public directory
+    const logoGeometry = new THREE.PlaneGeometry(200, 50); // Adjust size as needed
+    const logoMaterial = new THREE.MeshBasicMaterial({
+        map: logoTexture,
+        transparent: true, // Supports PNG transparency
+        side: THREE.DoubleSide,
+        emissive: 0xffffff, // White emissive for basic glow
+        emissiveIntensity: 0.5 // Adjust intensity for glow strength
     });
-    const baseGlow = new THREE.Mesh(baseGeometry, baseMaterial);
-    baseGlow.rotateX(-Math.PI / 2);
-    baseGlow.position.set(0, 0.01, -200);
-    scene.add(baseGlow);
-    
-    return { stars, gridHelper, beam, baseGlow };
+    const logo = new THREE.Mesh(logoGeometry, logoMaterial);
+    logo.position.set(0, 20, -500); // Position behind stars (stars are at z = -100 to 100)
+    scene.add(logo);
+    return { stars, gridHelper };
 }
 
 // Call this function right after scene setup
