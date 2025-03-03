@@ -1,0 +1,61 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #000000;
+}
+
+#gameCanvas {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+}
+
+#ui {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    background: rgba(255, 0, 0, 0.8);
+    padding: 5px 10px;
+    border-radius: 3px;
+    display: flex;
+    gap: 10px;
+}
+
+#ui button {
+    background: #ff0000;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+#gameOverScreen, #leaderboard, #garage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#gameOverScreen button, #leaderboard button, #garage button {
+    background: #ff0000;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin: 5px;
+    border-radius: 3px;
+}
+
+#leaderboardList {
+    list-style: none;
+    padding: 0;
+} 
