@@ -377,7 +377,7 @@ function animate() {
 
     // Move objects towards the player
     objects.forEach((obj, index) => {
-        obj.z += state.speed * 2; // Objects move towards the player
+        obj.z += state.speed * 2;
         obj.mesh.position.z = obj.z;
         
         // Remove objects that have passed the player
@@ -389,10 +389,9 @@ function animate() {
         // Collision detection
         if (checkCollision(bike, obj.mesh)) {
             if (obj.type === 'obstacle') {
-                state.score = Math.max(0, state.score - 1);
                 scene.remove(obj.mesh);
                 objects.splice(index, 1);
-                if (state.score === 0) gameOver();
+                gameOver(); // Immediate game over on obstacle collision
             } else {
                 state.score += 1;
                 scene.remove(obj.mesh);
