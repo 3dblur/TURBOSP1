@@ -40,10 +40,13 @@
     -->
     <div id="gameOverScreen" style="display: none;">
         
+        
         <h1>Game Over!</h1>
-        <p>Score: <span id="finalScore">0</span></p>
-        <p>Press ENTER to play again</p>
-        <p>High Score: <span id="highScore">1</span></p>
+        <div class="score-section">
+        <p class="score-text">Score: <span id="finalScore">0</span></p>
+        <p class="high-score-text">High Score: <span id="highScore">1</span></p>
+    </div>
+    <p class="play-again">Press <a id="enter"> ENTER </a> to Play Again</p>
         <div class="button-container">
             <a href="https://blog.succinct.xyz" target="_blank"><button id="shareBtn">Learn More</button></a>
             <button id="lockInBtn">Lock In</button>

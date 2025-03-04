@@ -1,3 +1,53 @@
+// Array of fun facts about zk proofs (beginner-friendly)
+const zkProofFunFacts = [
+    "Zk proofs let you prove something is true without revealing why—like showing you know a secret password without saying it!",
+    "Zk proofs are used in cryptocurrencies like Zcash to keep your transactions private while proving they’re valid!",
+    "The 'zk' in zk proofs stands for 'zero-knowledge'—you share zero info about the secret, yet prove you know it!",
+    "Zk proofs were invented in the 1980s by researchers who wanted to solve trust issues in computing—pretty cool, right?",
+    "With zk proofs, you can prove you’re over 18 without showing your exact age—just that you meet the requirement!",
+    "Zk proofs can make voting systems secure by proving your vote was counted without revealing who you voted for!",
+    "Zk proofs are like magic: you can prove you solved a puzzle without showing the solution—amazing for privacy!",
+    "In blockchain, zk proofs help make transactions faster and cheaper by compressing data—less clutter, more speed!",
+    "Zk proofs can be used in gaming to prove you didn’t cheat, without revealing your strategy—fair play guaranteed!",
+    "The math behind zk proofs involves cool concepts like cryptography and number theory—want to learn more?"
+];
+
+// Track which fun fact to show next
+let currentZkFactIndex = 0;
+
+// Quiz questions based on zk proof fun facts
+const zkQuizQuestions = [
+    {
+        question: "What does 'zk' in zk proofs stand for?",
+        options: ["Zero-Knowledge", "Zigzag-Knowledge", "Zip-Knowledge"],
+        correctAnswer: "Zero-Knowledge"
+    },
+    {
+        question: "What can zk proofs help prove without revealing?",
+        options: ["Your exact age", "Your favorite color", "Your exact location"],
+        correctAnswer: "Your exact age"
+    },
+    {
+        question: "Which cryptocurrency uses zk proofs for private transactions?",
+        options: ["Bitcoin", "Zcash", "Ethereum"],
+        correctAnswer: "Zcash"
+    },
+    {
+        question: "What decade were zk proofs invented in?",
+        options: ["1990s", "1980s", "2000s"],
+        correctAnswer: "1980s"
+    },
+    {
+        question: "What can zk proofs help with in voting systems?",
+        options: ["Proving your vote was counted", "Revealing who you voted for", "Counting votes faster"],
+        correctAnswer: "Proving your vote was counted"
+    }
+];
+
+// Track the number of deaths to limit quiz appearances
+
+const maxQuizDeaths = 3; // Show quiz for the first 3 deaths
+
 // Optimized 3D Turbo Racing Game with Three.js
 const canvas = document.getElementById('gameCanvas');
 const scoreDisplay = document.getElementById('score');
@@ -27,6 +77,111 @@ speedNotification.style.fontWeight = 'bold';
 speedNotification.style.zIndex = '1000';
 speedNotification.style.display = 'none';
 document.body.appendChild(speedNotification);
+
+/// Zk Knowledge Meter UI
+const zkMeterContainer = document.createElement('div');
+zkMeterContainer.id = 'zkMeterContainer';
+zkMeterContainer.style.position = 'absolute';
+zkMeterContainer.style.bottom = '15px'; // Changed from top to bottom
+zkMeterContainer.style.right = '15px';
+zkMeterContainer.style.display = 'flex';
+zkMeterContainer.style.alignItems = 'center';
+zkMeterContainer.style.gap = '10px';
+zkMeterContainer.style.zIndex = '1000';
+zkMeterContainer.style.borderColor = '#ffffff';
+zkMeterContainer.style.borderWidth = '10px';
+
+// Meter Label
+const zkMeterLabel = document.createElement('span');
+zkMeterLabel.textContent = 'ZK Meter:';
+zkMeterLabel.style.fontFamily = "'Chicago', 'Arial', sans-serif";
+zkMeterLabel.style.color = '#FFF';
+zkMeterLabel.style.textShadow = '1px 1px 0pxrgb(113, 16, 78)';
+zkMeterLabel.style.fontSize = '17px';
+zkMeterLabel.style.fontweight = '80';
+// Meter Bar
+const zkMeterBar = document.createElement('div');
+zkMeterBar.id = 'zkMeterBar';
+zkMeterBar.style.width = '150px';
+zkMeterBar.style.height = '40px';
+zkMeterBar.style.background = '#333';
+zkMeterBar.style.borderColor = '#ffffff';
+zkMeterBar.style.borderWidth = '10px';
+zkMeterBar.style.borderRadius = '7px';
+zkMeterBar.style.overflow = 'hidden';
+
+// Meter Fill
+const zkMeterFill = document.createElement('div');
+zkMeterFill.id = 'zkMeterFill';
+zkMeterFill.style.width = '0%';
+zkMeterFill.style.height = '100%';
+zkMeterFill.style.background = '#FF1493';
+zkMeterFill.style.transition = 'width 0.3s ease';
+
+zkMeterBar.appendChild(zkMeterFill);
+zkMeterContainer.appendChild(zkMeterLabel);
+zkMeterContainer.appendChild(zkMeterBar);
+document.body.appendChild(zkMeterContainer);
+
+// Zk Fun Fact Notification
+const zkFactNotification = document.createElement('div');
+zkFactNotification.id = 'zkFactNotification';
+zkFactNotification.style.position = 'absolute';
+zkFactNotification.style.top = '80px'; // Below the speed notification
+zkFactNotification.style.left = '50%';
+zkFactNotification.style.transform = 'translateX(-50%)';
+zkFactNotification.style.background = 'linear-gradient(180deg, #FF69B4, #FFC1CC)';
+zkFactNotification.style.border = '2px solid #FF1493';
+zkFactNotification.style.boxShadow = 'inset 1px 1px 0px #FFB6C1, inset -1px -1px 0px #FF69B4, inset 2px 2px 0px #FFF, inset -2px -2px 0px #C71585';
+zkFactNotification.style.color = '#FFF';
+zkFactNotification.style.textShadow = '1px 1px 0px #C71585';
+zkFactNotification.style.padding = '15px 20px';
+zkFactNotification.style.borderRadius = '5px';
+zkFactNotification.style.fontFamily = "'Chicago', 'Arial', sans-serif";
+zkFactNotification.style.fontSize = '18px';
+zkFactNotification.style.fontWeight = '100';
+zkFactNotification.style.maxWidth = '400px';
+zkFactNotification.style.textAlign = 'center';
+zkFactNotification.style.zIndex = '1000';
+zkFactNotification.style.display = 'none';
+document.body.appendChild(zkFactNotification);
+
+// Zk Quiz Dialog
+const zkQuizDialog = document.createElement('div');
+zkQuizDialog.id = 'zkQuizDialog';
+zkQuizDialog.style.position = 'fixed';
+zkQuizDialog.style.top = '50%';
+zkQuizDialog.style.left = '50%';
+zkQuizDialog.style.transform = 'translate(-50%, -50%) scale(1)';
+zkQuizDialog.style.background = 'linear-gradient(180deg, #FF69B4, #FFC1CC)';
+zkQuizDialog.style.border = '4px solid #FF1493';
+zkQuizDialog.style.boxShadow = 'inset 1px 1px 0px #FFB6C1, inset -1px -1px 0px #FF69B4, inset 2px 2px 0px #FFF, inset -2px -2px 0px #C71585';
+zkQuizDialog.style.padding = '25px';
+zkQuizDialog.style.width = '450px';
+zkQuizDialog.style.fontFamily = "'Chicago', 'Arial', sans-serif";
+zkQuizDialog.style.color = '#ffffff';
+zkQuizDialog.style.textShadow = '1px 1px 0px #FF1493';
+zkQuizDialog.style.textAlign = 'center';
+zkQuizDialog.style.zIndex = '10000';
+zkQuizDialog.style.backdropFilter = 'blur(5px)';
+zkQuizDialog.style.borderRadius = '8px';
+zkQuizDialog.style.background ='linear-gradient(180deg, #FF69B4, #FFC1CC)';
+zkQuizDialog.style.backgroundBlendMode = 'overlay';
+zkQuizDialog.style.display = 'none';
+zkQuizDialog.style.opacity = '1';
+zkQuizDialog.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+zkQuizDialog.style.zIndex = '999';
+// Window Controls
+const quizWindowControls = document.createElement('div');
+quizWindowControls.className = 'window-controls';
+quizWindowControls.innerHTML = `
+    <button id="quizCloseBtn" style="width: 12px; height: 12px; background: #FF4040; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
+    <button id="quizMinimizeBtn" style="width: 12px; height: 12px; background: #FFBF00; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
+    <button id="quizMaximizeBtn" style="width: 12px; height: 12px; background: #00FF00; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
+`;
+zkQuizDialog.appendChild(quizWindowControls);
+
+document.body.appendChild(zkQuizDialog);
 /*
 // Add username modal
 const usernameModal = document.createElement('div');
@@ -537,6 +692,7 @@ const state = {
     canChangeLane: true, // Add this to track if we can change lanes
     targetLane: 1, // Add this to track the target lane
     powerUpsCollected: 0,
+    zkPowerUpsForFact: 0,
     baseSpeed: 0.5,
     speedMultiplier: 1,
     obstacleCount: 0,  // Track obstacles for power-up spawning
@@ -556,6 +712,11 @@ window.addEventListener('keyup', (e) => {
     keys[e.key] = false;
 });
 
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && state.gameOver) {
+        resetGame();
+    }
+});
 // Update the animation loop to move objects towards the player
 
 
@@ -601,18 +762,35 @@ function animate() {
             return; // Skip collision check for removed objects
         }
         
-        // Collision detection
+        // Collision detection (updated block)
         if (checkCollision(bike, obj.mesh)) {
             if (obj.type === 'obstacle') {
+                if (bike.isInvincible) {
+                    // Skip collision if invincible
+                    return;
+                }
                 scene.remove(obj.mesh);
                 objects.splice(index, 1);
                 gameOver();
             } else {
-                // Power-up collection with larger speed increases
+                // Power-up collection logic
                 state.score += 1;
                 state.powerUpsCollected += 1;
+                state.zkPowerUpsForFact += 1;
                 
-                // Every 10 power-ups, increase speed more significantly
+                const fillPercentage = (state.zkPowerUpsForFact / 3) * 100;
+                zkMeterFill.style.width = `${Math.min(fillPercentage, 100)}%`;
+                
+                if (state.zkPowerUpsForFact >= 3) {
+                    setTimeout(() => {
+                        state.zkPowerUpsForFact = 0;
+                        zkMeterFill.style.width = '0%';
+                    }, 1000); // 1-second delay
+                
+                    showZkFunFact();
+                    applyZkBonus();
+                }
+                
                 if (state.powerUpsCollected % 10 === 0) {
                     state.speedMultiplier += 0.5;
                     updateGameSpeed();
@@ -622,13 +800,12 @@ function animate() {
                 scene.remove(obj.mesh);
                 objects.splice(index, 1);
             }
-        }//spaceElements.stars.position.z += state.speed;
+        }
 
-    // Reset the starfield position when it moves too far
-    if (spaceElements.stars.position.z > 100) {
-        spaceElements.stars.position.z = -100; // Adjust these values based on your scene
-    }
-        
+        // Reset the starfield position when it moves too far
+        if (spaceElements.stars.position.z > 100) {
+            spaceElements.stars.position.z = -100;
+        }
     });
 
     // Spawn new objects
@@ -696,22 +873,33 @@ function gameOver() {
     
     console.log('Game over - username:', state.username);
     
-    // Save score with username
-    saveHighScore(state.score);
+    // Close other dialogs
+    garage.style.display = 'none';
+    leaderboard.style.display = 'none';
     
-    if (state.score > state.highScore) {
-        state.highScore = state.score;
-        highScoreDisplay.textContent = state.highScore;
+    // Check if player's score is greater than 15 to show the quiz
+    if (state.score > 15) {
+        showZkQuiz();
+    } else {
+        // Show Game Over dialog if quiz is not shown
+        gameOverScreen.style.display = 'block';
+        gameOverScreen.style.opacity = '0';
+        gameOverScreen.style.transform = 'translate(-50%, -50%) scale(0.8)';
+        
+        setTimeout(() => {
+            gameOverScreen.style.opacity = '1';
+            gameOverScreen.style.transform = 'translate(-50%, -50%) scale(1)';
+        }, 50);
+        
+        // Save score without quiz bonus
+        saveHighScore(state.score);
+        
+        if (state.score > state.highScore) {
+            state.highScore = state.score;
+            highScoreDisplay.textContent = state.highScore;
+        }
     }
-    
-    gameOverScreen.style.display = 'block';
 }
-
-window.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && state.gameOver) {
-        resetGame();
-    }
-});
 
 function resetGame() {
     startGame();
@@ -1010,20 +1198,260 @@ function showSpeedNotification(multiplier) {
         speedNotification.style.display = 'none';
     }, 3000);
 }
+// Show Zk Fun Fact
+function showZkFunFact() {
+    // Get the next fun fact
+    const fact = zkProofFunFacts[currentZkFactIndex];
+    zkFactNotification.textContent = `💡 Zk Proof Fun Fact: ${fact}`;
+    zkFactNotification.style.display = 'block';
+    
+    // Hide after 5 seconds
+    setTimeout(() => {
+        zkFactNotification.style.display = 'none';
+    }, 5000);
+    
+    // Cycle to the next fact
+    currentZkFactIndex = (currentZkFactIndex + 1) % zkProofFunFacts.length;
+}
 
+// Apply a temporary Zk bonus (e.g., invincibility)
+// Apply a temporary Zk bonus (e.g., invincibility)
+function applyZkBonus() {
+    // Make the bike invincible for 5 seconds
+    bike.isInvincible = true;
+
+    // Add a visible invincibility shield (sphere)
+    const shieldGeometry = new THREE.SphereGeometry(2, 16, 16); // Radius of 2 units
+    const shieldMaterial = new THREE.MeshBasicMaterial({
+        color: 0xFFFF00, // Yellow shield
+        transparent: true,
+        opacity: 0.3, // Semi-transparent
+        side: THREE.DoubleSide
+    });
+    const shield = new THREE.Mesh(shieldGeometry, shieldMaterial);
+    shield.name = 'invincibilityShield'; // Name for easy identification
+    
+    // Add shield to the bike (so it moves with the bike)
+    bike.add(shield);
+    
+    // Glow effect on the bike
+    bike.children.forEach(child => {
+        if (child.material && child.name !== 'invincibilityShield') { // Exclude the shield from glowing
+            child.material.emissive.set(0xFFFF00);
+            child.material.emissiveIntensity = 0.5;
+        }
+    });
+    
+    // Show a notification
+    speedNotification.textContent = '🚀 Zk Bonus: Invincibility for 5 seconds!';
+    speedNotification.style.display = 'block';
+    setTimeout(() => {
+        speedNotification.style.display = 'none';
+    }, 3000);
+    
+    // Revert after 5 seconds
+    setTimeout(() => {
+        bike.isInvincible = false;
+        
+        // Remove the shield from the bike and scene
+        const shieldMesh = bike.getObjectByName('invincibilityShield');
+        if (shieldMesh) {
+            bike.remove(shieldMesh);
+            shieldMesh.geometry.dispose();
+            shieldMesh.material.dispose();
+        }
+        
+        // Remove glow effect from the bike
+        bike.children.forEach(child => {
+            if (child.material && child.name !== 'invincibilityShield') {
+                child.material.emissive.set(0x000000);
+                child.material.emissiveIntensity = 0;
+            }
+        });
+    }, 5000);
+}
 // Fix for the game start sequence
+// Quiz state
+let currentQuestionIndex = 0;
+let quizBonusPoints = 0;
+let quizQuestions = [];
+
+// Show Zk Quiz
+function showZkQuiz() {
+    // Reset quiz state
+    currentQuestionIndex = 0;
+    quizBonusPoints = 0;
+    
+    // Select 3 random questions
+    quizQuestions = [...zkQuizQuestions].sort(() => Math.random() - 0.5).slice(0, 3);
+    
+    // Show the first question
+    displayQuizQuestion();
+    
+    // Show the quiz dialog
+    zkQuizDialog.style.display = 'block';
+    zkQuizDialog.style.opacity = '0';
+    zkQuizDialog.style.transform = 'translate(-50%, -50%) scale(0.8)';
+    
+    setTimeout(() => {
+        zkQuizDialog.style.opacity = '1';
+        zkQuizDialog.style.transform = 'translate(-50%, -50%) scale(1)';
+    }, 50);
+}
+
+// Display the current quiz question
+function displayQuizQuestion() {
+    if (currentQuestionIndex >= quizQuestions.length) {
+        // Quiz finished
+        endQuiz();
+        return;
+    }
+    
+    const question = quizQuestions[currentQuestionIndex];
+    
+    // Shuffle options
+    const options = [...question.options].sort(() => Math.random() - 0.5);
+    
+    zkQuizDialog.innerHTML = `
+        <div class="window-controls">
+            <button id="quizCloseBtn" style="width: 12px; height: 12px; background: #FF4040; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
+            <button id="quizMinimizeBtn" style="width: 12px; height: 12px; background: #FFBF00; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
+            <button id="quizMaximizeBtn" style="width: 12px; height: 12px; background: #00FF00; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
+        </div>
+        <h1 style="font-size: 24px; margin-top: 25px; margin-bottom: 15px;">Zk Proof Quiz</h1>
+        <p style="font-size: 18px; margin: 20px 0;">Question ${currentQuestionIndex + 1}/${quizQuestions.length}</p>
+        <p style="font-size: 16px; margin: 20px 0;">${question.question}</p>
+        <div class="quiz-options" style="display: flex; flex-direction: column; gap: 10px; margin: 20px 0;">
+            ${options.map(option => `
+                <button class="quiz-option-btn" style="padding: 10px; border: 2px solid #FF1493; background: #FF69B4; color: #FFF; text-shadow: 1px 1px 0px #C71585; font-family: 'Chicago', 'Arial', sans-serif; font-size: 14px; cursor: pointer; border-radius: 5px; transition: background 0.2s ease, transform 0.1s ease;">
+                    ${option}
+                </button>
+            `).join('')}
+        </div>
+    `;
+    
+    // Add event listeners to the answer buttons
+    document.querySelectorAll('.quiz-option-btn').forEach(btn => {
+        btn.addEventListener('click', () => handleAnswer(btn.textContent.trim(), question.correctAnswer));
+    });
+    
+    // Add window control listeners
+    document.getElementById('quizCloseBtn').addEventListener('click', () => {
+        zkQuizDialog.style.display = 'none';
+        endQuiz();
+    });
+    
+    document.getElementById('quizMinimizeBtn').addEventListener('click', () => {
+        zkQuizDialog.style.transform = 'translate(-50%, -50%) scale(0.1)';
+        zkQuizDialog.style.opacity = '0.3';
+        setTimeout(() => {
+            zkQuizDialog.style.transform = 'translate(-50%, -50%) scale(1)';
+            zkQuizDialog.style.opacity = '1';
+        }, 1000);
+    });
+    
+    document.getElementById('quizMaximizeBtn').addEventListener('click', () => {
+        if (zkQuizDialog.style.width === '450px' || !zkQuizDialog.style.width) {
+            zkQuizDialog.style.width = '600px';
+            zkQuizDialog.style.padding = '30px';
+        } else {
+            zkQuizDialog.style.width = '450px';
+            zkQuizDialog.style.padding = '25px';
+        }
+    });
+}
+
+// Handle the player's answer
+function handleAnswer(selectedAnswer, correctAnswer) {
+    if (selectedAnswer === correctAnswer) {
+        quizBonusPoints += 5; // +5 points for correct answer
+        zkQuizDialog.innerHTML += `
+            <p style="font-size: 16px; color: #FFFF00; text-shadow: 1px 1px 0px #C71585; margin: 10px 0;">Correct! +5 Points</p>
+        `;
+    } else {
+        zkQuizDialog.innerHTML += `
+            <p style="font-size: 16px; color: #FF4040; text-shadow: 1px 1px 0px #C71585; margin: 10px 0;">Incorrect. The correct answer was: ${correctAnswer}</p>
+        `;
+    }
+    
+    // Move to the next question after a short delay
+    setTimeout(() => {
+        currentQuestionIndex++;
+        displayQuizQuestion();
+    }, 1500);
+}
+
+// End the quiz and show results
+function endQuiz() {
+    // Update the player's score with the quiz bonus
+    state.score += quizBonusPoints;
+    
+    // Update the Game Over dialog with the new score
+    finalScoreDisplay.textContent = state.score;
+    
+    if (state.score > state.highScore) {
+        state.highScore = state.score;
+        highScoreDisplay.textContent = state.highScore;
+    }
+    
+    // Show quiz results in the dialog
+    zkQuizDialog.innerHTML = `
+        <div class="window-controls">
+            <button id="quizCloseBtn" style="width: 12px; height: 12px; background: #FF4040; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
+            <button id="quizMinimizeBtn" style="width: 12px; height: 12px; background: #FFBF00; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
+            <button id="quizMaximizeBtn" style="width: 12px; height: 12px; background: #00FF00; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
+        </div>
+        <h1 style="font-size: 24px; margin-top: 25px; margin-bottom: 15px;">Quiz Complete!</h1>
+        <p style="font-size: 18px; margin: 20px 0;">You earned ${quizBonusPoints} bonus points!</p>
+        <p style="font-size: 16px; margin: 20px 0;">Your new total score: ${state.score}</p>
+        <button id="continueToGameOver" style="padding: 12px 30px; border: 2px solid #FF1493; background: #FF69B4; color: #FFF; text-shadow: 1px 1px 0px #C71585; font-family: 'Chicago', 'Arial', sans-serif; font-size: 16px; cursor: pointer; border-radius: 5px; transition: background 0.2s ease, transform 0.1s ease;">
+            Continue
+        </button>
+    `;
+    
+    // Add event listener for the continue button
+    document.getElementById('continueToGameOver').addEventListener('click', () => {
+        zkQuizDialog.style.display = 'none';
+        
+        // Show the Game Over dialog
+        gameOverScreen.style.display = 'block';
+        gameOverScreen.style.opacity = '0';
+        gameOverScreen.style.transform = 'translate(-50%, -50%) scale(0.8)';
+        
+        setTimeout(() => {
+            gameOverScreen.style.opacity = '1';
+            gameOverScreen.style.transform = 'translate(-50%, -50%) scale(1)';
+        }, 50);
+    });
+    
+    // Save the updated score to the leaderboard
+    saveHighScore(state.score);
+}
 function startGame() {
     // Reset game state
     state.gameOver = false;
     state.score = 1;
     state.obstacleCount = 0;
     state.powerUpsCollected = 0;
+    state.zkPowerUpsForFact = 0;
     state.speedMultiplier = 1;
     state.speed = state.baseSpeed;
     scoreDisplay.textContent = state.score;
     
-    // Reset bike position
+    
+    
+    // Reset bike state
     bike.position.set(0, 0.3, 0);
+    bike.isInvincible = false;
+    bike.children.forEach(child => {
+        if (child.material) {
+            child.material.emissive.set(0x000000);
+            child.material.emissiveIntensity = 0;
+        }
+    });
+    
+    // Reset Zk Knowledge Meter
+    zkMeterFill.style.width = '0%';
     
     // Clear any existing objects
     objects.forEach(obj => scene.remove(obj.mesh));
@@ -1035,7 +1463,6 @@ function startGame() {
     // Start animation loop
     animate();
 }
-
 // Update the start game button event listener
 document.getElementById('startGameBtn').addEventListener('click', () => {
     const usernameInput = document.getElementById('usernameInput');
