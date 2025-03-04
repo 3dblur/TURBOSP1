@@ -272,14 +272,14 @@ document.body.appendChild(usernameModal);
 const infoPanel = document.createElement('div');
 infoPanel.id = 'infoPanel';
 infoPanel.style.position = 'fixed';
-infoPanel.style.bottom = '10px';
+infoPanel.style.bottom = '1px';
 infoPanel.style.left = '50%';
 infoPanel.style.transform = 'translateX(-50%)';
 infoPanel.style.background = 'linear-gradient(180deg,rgb(255, 228, 241),rgb(251, 168, 210))';
 infoPanel.style.border = '2px solid #FF1493';
 infoPanel.style.boxShadow = 'inset 2px 2px 0px #FFB6C1, inset -1px -1px 0px #FF69B4, inset 2px 2px 0px #FFF, inset -2px -2px 0px #C71585';
 infoPanel.style.padding = '10px 15px';
-infoPanel.style.width = '600px';
+infoPanel.style.width = '730px';
 infoPanel.style.fontFamily = "'Chicago', 'Arial', sans-serif";
 infoPanel.style.color = 'rgb(221, 48, 140)';
 
@@ -294,10 +294,14 @@ infoPanel.innerHTML = `
         
     </div>
     <h2 style="font-size: 20px; margin-top: 15px; margin-bottom: 10px;">Game Info</h2>
-    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">⚡️ Collect power-ups to earn a Zk Shield (invincibility)—starts at 3, then increases each time!</p>
-    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">💡 Every power-up milestone unlocks a Zk proof fact to boost your knowledge!</p>
-    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">🌟 Play well to score high and discover a hidden Easter egg!</p>
-    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">🚗 Use ←→ to move, Press Enter to restart after Game Over.</p>
+    <br>
+    <p style="font-size: 15px;  font-weight: 95; margin: -5px 0;">🚗 Use ←→ to move, Press Enter to restart after Game's Over.</p>
+    <p style="font-size: 15px;  font-weight: 95; margin: 7px 0;">⚡️ Collect power-ups and fill up your ZK Meter to get a Zk Shield </p> 
+    <p style="font-size: 15px;  font-weight: 95; margin: 7px 0;"> (P.S It keeps getting tougher to fill! )</p>
+    <p style="font-size: 15px;  font-weight: 95; margin: 7px 0;">💡 Every Time you level up your ZK METER it unlocks a Zk proof fact to boost your knowledge!</p>
+    <p style="font-size: 15px;  font-weight: 95; margin: 7px 0;"> (P.S They might be Valuable so make sure to pay attention to them! )</p>
+    <p style="font-size: 15px;  font-weight: 95; margin: 7px 0;">🌟 Score high and discover an Easter egg (might get you some ez points)!</p>
+    <br>
 `;
 
 
