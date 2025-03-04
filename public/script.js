@@ -99,8 +99,14 @@ zkLevelLabel.textContent = 'L1'; // Start at L1
 zkLevelLabel.style.fontFamily = "'Chicago', 'Arial', sans-serif";
 zkLevelLabel.style.color = '#FFF';
 zkLevelLabel.style.textShadow = '1px 1px 0px rgb(113, 16, 78)';
-zkLevelLabel.style.fontSize = '17px';
-zkLevelLabel.style.fontWeight = '80';
+zkLevelLabel.style.fontSize = '40px';
+zkLevelLabel.style.fontWeight = '99';
+zkLevelLabel.style.borderColor = '#ffffff';
+zkLevelLabel.style.borderWidth = '3';
+zkLevelLabel.style.borderStyle = 'solid';
+zkLevelLabel.style.borderradius= '3px';
+zkLevelLabel.style.backgroundColor= 'rgba(0, 0, 0, 0)';
+zkLevelLabel.style.padding= '10px';
 
 // Meter Bar Container (to keep label and bar aligned horizontally)
 const zkMeterBarContainer = document.createElement('div');
@@ -142,6 +148,29 @@ zkMeterBarContainer.appendChild(zkMeterBar);
 zkMeterContainer.appendChild(zkLevelLabel); // Add level label first
 zkMeterContainer.appendChild(zkMeterBarContainer); // Then the meter
 document.body.appendChild(zkMeterContainer);
+
+const backgroundAudio = document.createElement('audio');
+backgroundAudio.id = 'backgroundAudio';
+backgroundAudio.src = '/audio.mp3';
+backgroundAudio.loop = true;
+backgroundAudio.volume = 0.5;
+document.body.appendChild(backgroundAudio);
+
+// Attempt to play immediately
+backgroundAudio.play().then(() => {
+    console.log('Background audio started playing');
+}).catch(error => {
+    console.log('Autoplay blocked by browser:', error);
+    document.body.addEventListener('click', () => {
+        if (backgroundAudio.paused) {
+            backgroundAudio.play().then(() => {
+                console.log('Audio started after user interaction');
+            }).catch(err => {
+                console.log('Audio playback failed after click:', err);
+            });
+        }
+    }, { once: true });
+});
 
 
 // Zk Fun Fact Notification
@@ -237,6 +266,8 @@ document.body.appendChild(usernameModal);
 */
 // Add username modal
 // Add username modal
+
+
 
 const infoPanel = document.createElement('div');
 infoPanel.id = 'infoPanel';
