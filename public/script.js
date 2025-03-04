@@ -130,29 +130,7 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Add functionality for window control buttons (simulating Mac OS 7 behavior)
-document.getElementById('closeBtn').addEventListener('click', () => {
-    usernameModal.style.display = 'none'; // Close the modal
-});
 
-document.getElementById('minimizeBtn').addEventListener('click', () => {
-    usernameContent.style.transform = 'scale(0.1)';
-    usernameContent.style.opacity = '0.3';
-    setTimeout(() => {
-        usernameContent.style.transform = 'scale(1)';
-        usernameContent.style.opacity = '1';
-    }, 1000); // Simulate minimize/restore animation
-});
-
-document.getElementById('maximizeBtn').addEventListener('click', () => {
-    if (usernameContent.style.width === '400px') {
-        usernameContent.style.width = '600px';
-        usernameContent.style.height = '300px';
-    } else {
-        usernameContent.style.width = '400px';
-        usernameContent.style.height = '';
-    }
-});
 //endedit
 // Scene Setup
 const scene = new THREE.Scene();
@@ -758,13 +736,13 @@ document.getElementById('closeGarage').addEventListener('click', () => {
 });
 
 shareBtn.addEventListener('click', () => {
-    const message = `I scored ${state.score} in Turbo Racing 3D! Play now: [Your URL]`;
+
     // Simulate sharing on X (simplified, no real API call here)
-    alert(`Sharing on X: ${message}`);
+   
 });
 
 lockInBtn.addEventListener('click', () => {
-    alert('Score locked in!');
+    alert("You're now locked in");
 });
 
 // Handle window resize
@@ -801,40 +779,67 @@ async function saveHighScore(score) {
         console.error('Error saving score:', error);
     }
 }
-
+//changed leaderboard below
 async function fetchLeaderboard() {
     try {
-        const response = await fetch('/api/scores');
+        const limit = 10; // Fetch top 20 scores
+        const response = await fetch(`/api/scores?limit=${limit}`);
         const scores = await response.json();
         
-        console.log("Fetched leaderboard data:", scores); // Debug log
+        console.log("Fetched leaderboard data:", scores);
         
         // Clear existing leaderboard
         leaderboardList.innerHTML = '';
         
-        // Add title
-        const leaderboardTitle = document.createElement('h2');
-        leaderboardTitle.textContent = 'Turbo Racing Leaderboard';
-        leaderboardTitle.style.color = '#ff4500';
-        leaderboardTitle.style.borderBottom = '2px solid #ff4500';
-        leaderboardList.appendChild(leaderboardTitle);
+        // Add title bar (empty since controls are moving)
+        const titleBar = document.createElement('div');
+        titleBar.className = 'title-bar';
+        leaderboardList.appendChild(titleBar);
         
-        // Add header row
+        // Create top section for controls and header
+        const topSection = document.createElement('div');
+        topSection.style.display = 'flex';
+        topSection.style.alignItems = 'center';
+        topSection.style.justifyContent = 'space-between';
+        
+        // Add window controls
+        const windowControls = document.createElement('div');
+        windowControls.className = 'window-controls';
+        windowControls.innerHTML = `
+            <button id="leaderboardCloseBtn"></button>
+            <button id="leaderboardMinimizeBtn"></button>
+            <button id="leaderboardMaximizeBtn"></button>
+        `;
+        topSection.appendChild(windowControls);
+        
+        // Add header row beside controls, smaller and white
         const headerRow = document.createElement('div');
         headerRow.className = 'leaderboard-header';
+        headerRow.style.fontSize = '14px'; // Smaller size
+        headerRow.style.color = 'white';   // White color
+        headerRow.style.flexGrow = '1';    // Take available space
+        headerRow.style.textAlign = 'center'; // Center the text
         headerRow.innerHTML = `
             <div class="rank">RANK</div>
             <div class="name">NAME</div>
             <div class="score">SCORE</div>
         `;
-        leaderboardList.appendChild(headerRow);
+        topSection.appendChild(headerRow);
         
-        // Add each score with proper username
-        scores.forEach((score, index) => {
+        leaderboardList.appendChild(topSection);
+        
+        // Create scrollable container for leaderboard items
+        const scrollContainer = document.createElement('div');
+        scrollContainer.className = 'leaderboard-scroll-container';
+        scrollContainer.style.maxHeight = '400px'; // Fixed height for scrolling
+        scrollContainer.style.overflowY = 'auto';  // Enable vertical scrolling
+        scrollContainer.style.paddingRight = '10px'; // Space for scrollbar
+        
+        // Add each score with proper username (limited to top 20)
+        scores.slice(0, 20).forEach((score, index) => { // Ensure only 20 entries
             const listItem = document.createElement('div');
             listItem.className = 'leaderboard-item';
             
-            // Ensure username is displayed correctly
             const displayUsername = score.username ? score.username : 'Anonymous';
             
             listItem.innerHTML = `
@@ -845,95 +850,47 @@ async function fetchLeaderboard() {
                 </div>
                 <div class="score">${score.score}</div>
             `;
-            leaderboardList.appendChild(listItem);
+            scrollContainer.appendChild(listItem);
         });
         
-        // Add pagination controls
-        const paginationControls = document.createElement('div');
-        paginationControls.className = 'pagination';
-        paginationControls.innerHTML = `
-            <button class="prev-btn">< Previous</button>
-            <div class="page-number">1</div>
-            <button class="next-btn">Next ></button>
-        `;
-        leaderboardList.appendChild(paginationControls);
+        leaderboardList.appendChild(scrollContainer);
         
-        // Add CSS for the leaderboard
-        const style = document.createElement('style');
-        style.textContent = `
-            #leaderboard {
-                background-color: #000;
-                border: 2px solid #ff4500;
-                color: #fff;
-                padding: 20px;
-                min-width: 400px;
+        // Add functionality for window control buttons
+        document.getElementById('leaderboardCloseBtn').addEventListener('click', () => {
+            leaderboard.style.display = 'none';
+        });
+
+        document.getElementById('leaderboardMinimizeBtn').addEventListener('click', () => {
+            leaderboard.style.transform = 'scale(0.1)';
+            leaderboard.style.opacity = '0.3';
+            setTimeout(() => {
+                leaderboard.style.transform = 'scale(1)';
+                leaderboard.style.opacity = '1';
+            }, 1000);
+        });
+
+        document.getElementById('leaderboardMaximizeBtn').addEventListener('click', () => {
+            if (leaderboard.style.width === '400px' || !leaderboard.style.width) {
+                leaderboard.style.width = '600px';
+                leaderboard.style.height = '500px';
+                scrollContainer.style.maxHeight = '450px'; // Adjust scroll area when maximized
+            } else {
+                leaderboard.style.width = '400px';
+                leaderboard.style.height = 'auto';
+                scrollContainer.style.maxHeight = '400px'; // Reset to default
             }
-            .leaderboard-header {
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 15px;
-                color: #ffd700;
-                font-weight: bold;
-            }
-            .leaderboard-item {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 10px 0;
-                border-bottom: 1px solid #333;
-            }
-            .rank {
-                width: 50px;
-                font-weight: bold;
-                color: #fff;
-            }
-            .player-info {
-                display: flex;
-                align-items: center;
-                flex-grow: 1;
-            }
-            .avatar {
-                width: 30px;
-                height: 30px;
-                border-radius: 50%;
-                background-image: url('https://testnet.succinct.xyz/images/succinct-icon-pink.svg');
-                background-size: cover;
-                background-position: center;
-                margin-right: 10px;
-            }
-            .username {
-                color: #fff;
-            }
-            .score {
-                font-weight: bold;
-                color: #ff4500;
-                min-width: 60px;
-                text-align: right;
-            }
-            .pagination {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                margin-top: 20px;
-            }
-            .pagination button {
-                background: transparent;
-                color: #fff;
-                border: none;
-                cursor: pointer;
-            }
-            .page-number {
-                margin: 0 15px;
-                padding: 5px 15px;
-                border: 1px solid #ff4500;
-            }
-        `;
-        document.head.appendChild(style);
+        });
+
+        // Add functionality for the close button at the bottom
+        document.getElementById('closeLeaderboard').addEventListener('click', () => {
+            leaderboard.style.display = 'none';
+        });
     } catch (error) {
         console.error('Error fetching leaderboard:', error);
         leaderboardList.innerHTML = '<li>Error loading leaderboard</li>';
     }
 }
+
 // Update the game speed calculation
 function updateGameSpeed() {
     state.speed = state.baseSpeed * state.speedMultiplier;
