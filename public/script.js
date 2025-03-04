@@ -216,6 +216,40 @@ document.body.appendChild(usernameModal);
 */
 // Add username modal
 // Add username modal
+
+const infoPanel = document.createElement('div');
+infoPanel.id = 'infoPanel';
+infoPanel.style.position = 'fixed';
+infoPanel.style.bottom = '10px';
+infoPanel.style.left = '50%';
+infoPanel.style.transform = 'translateX(-50%)';
+infoPanel.style.background = 'linear-gradient(180deg,rgb(255, 228, 241),rgb(254, 142, 198))';
+infoPanel.style.border = '2px solid #FF1493';
+infoPanel.style.boxShadow = 'inset 1px 1px 0px #FFB6C1, inset -1px -1px 0px #FF69B4, inset 2px 2px 0px #FFF, inset -2px -2px 0px #C71585';
+infoPanel.style.padding = '10px 15px';
+infoPanel.style.width = '500px';
+infoPanel.style.fontFamily = "'Chicago', 'Arial', sans-serif";
+infoPanel.style.color = 'rgb(221, 48, 140)';
+
+infoPanel.style.textAlign = 'center';
+infoPanel.style.zIndex = '2300'; // Above username modal
+infoPanel.style.borderRadius = '4px';
+
+
+// Info Panel Content
+infoPanel.innerHTML = `
+    <div style="position: absolute; top: 5px; left: 5px; display: flex; gap: 5px;">
+        
+    </div>
+    <h2 style="font-size: 20px; margin-top: 15px; margin-bottom: 10px;">Game Info</h2>
+    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">⚡️ Collect 3 power-ups for a Zk Shield (invincibility)!</p>
+    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">💡 Every 3 power-ups gives 1 Zk proof fact.</p>
+    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">🌟 Play well to score high and discover a hidden Easter egg!</p>
+    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">🚗 Use ←→ to move, Enter to restart after Game Over.</p>
+`;
+
+
+
 const usernameModal = document.createElement('div');
 usernameModal.id = 'usernameModal';
 usernameModal.style.position = 'fixed';
@@ -223,7 +257,7 @@ usernameModal.style.top = '0';
 usernameModal.style.left = '0';
 usernameModal.style.width = '100%';
 usernameModal.style.height = '100%';
-usernameModal.style.backgroundColor = 'rgba(255, 105, 180, 0.5)'; // Pinkish transparent background (hot pink)
+usernameModal.style.backgroundColor = 'rgba(196, 73, 134, 0.46)'; // Pinkish transparent background (hot pink)
 usernameModal.style.display = 'flex';
 usernameModal.style.justifyContent = 'center';
 usernameModal.style.alignItems = 'center';
@@ -259,7 +293,7 @@ usernameContent.innerHTML = `
 
 usernameModal.appendChild(usernameContent);
 document.body.appendChild(usernameModal);
-
+document.body.appendChild(infoPanel);
 // Add retro font and button styles
 const style = document.createElement('style');
 style.textContent = `
@@ -1476,6 +1510,7 @@ document.getElementById('startGameBtn').addEventListener('click', () => {
     state.username = username;
     console.log('Username set to:', state.username);
     usernameModal.style.display = 'none';
+    infoPanel.style.display = 'none'; // Hide info panel
     
     // Start the game
     startGame();
