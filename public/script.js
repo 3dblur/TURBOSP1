@@ -44,9 +44,11 @@ const zkQuizQuestions = [
     }
 ];
 
-// Track the number of deaths to limit quiz appearances
+// Variables for dynamic power-up thresholds
+let powerUpThreshold = 3; // Start with 3 power-ups for the first milestone
+let powerUpsForNextMilestone = 0; // Track progress toward the next milestone
 
-const maxQuizDeaths = 3; // Show quiz for the first 3 deaths
+let zkLevel = 1; // Start at L1
 
 // Optimized 3D Turbo Racing Game with Three.js
 const canvas = document.getElementById('gameCanvas');
@@ -82,31 +84,46 @@ document.body.appendChild(speedNotification);
 const zkMeterContainer = document.createElement('div');
 zkMeterContainer.id = 'zkMeterContainer';
 zkMeterContainer.style.position = 'absolute';
-zkMeterContainer.style.bottom = '15px'; // Changed from top to bottom
+zkMeterContainer.style.bottom = '15px';
 zkMeterContainer.style.right = '15px';
 zkMeterContainer.style.display = 'flex';
-zkMeterContainer.style.alignItems = 'center';
-zkMeterContainer.style.gap = '10px';
+zkMeterContainer.style.flexDirection = 'column'; // Stack vertically
+zkMeterContainer.style.alignItems = 'flex-end'; // Align to the right
+zkMeterContainer.style.gap = '5px'; // Space between label and meter
 zkMeterContainer.style.zIndex = '1000';
-zkMeterContainer.style.borderColor = '#ffffff';
-zkMeterContainer.style.borderWidth = '10px';
+
+// Level Label
+const zkLevelLabel = document.createElement('span');
+zkLevelLabel.id = 'zkLevelLabel';
+zkLevelLabel.textContent = 'L1'; // Start at L1
+zkLevelLabel.style.fontFamily = "'Chicago', 'Arial', sans-serif";
+zkLevelLabel.style.color = '#FFF';
+zkLevelLabel.style.textShadow = '1px 1px 0px rgb(113, 16, 78)';
+zkLevelLabel.style.fontSize = '17px';
+zkLevelLabel.style.fontWeight = '80';
+
+// Meter Bar Container (to keep label and bar aligned horizontally)
+const zkMeterBarContainer = document.createElement('div');
+zkMeterBarContainer.style.display = 'flex';
+zkMeterBarContainer.style.alignItems = 'center';
+zkMeterBarContainer.style.gap = '10px';
 
 // Meter Label
 const zkMeterLabel = document.createElement('span');
 zkMeterLabel.textContent = 'ZK Meter:';
 zkMeterLabel.style.fontFamily = "'Chicago', 'Arial', sans-serif";
 zkMeterLabel.style.color = '#FFF';
-zkMeterLabel.style.textShadow = '1px 1px 0pxrgb(113, 16, 78)';
+zkMeterLabel.style.textShadow = '1px 1px 0px rgb(113, 16, 78)';
 zkMeterLabel.style.fontSize = '17px';
-zkMeterLabel.style.fontweight = '80';
+zkMeterLabel.style.fontWeight = '80';
+
 // Meter Bar
 const zkMeterBar = document.createElement('div');
 zkMeterBar.id = 'zkMeterBar';
 zkMeterBar.style.width = '150px';
 zkMeterBar.style.height = '40px';
 zkMeterBar.style.background = '#333';
-zkMeterBar.style.borderColor = '#ffffff';
-zkMeterBar.style.borderWidth = '10px';
+zkMeterBar.style.border = '3px solid #ffffff'; // Fixed border syntax
 zkMeterBar.style.borderRadius = '7px';
 zkMeterBar.style.overflow = 'hidden';
 
@@ -118,10 +135,14 @@ zkMeterFill.style.height = '100%';
 zkMeterFill.style.background = '#FF1493';
 zkMeterFill.style.transition = 'width 0.3s ease';
 
+// Assemble the UI
 zkMeterBar.appendChild(zkMeterFill);
-zkMeterContainer.appendChild(zkMeterLabel);
-zkMeterContainer.appendChild(zkMeterBar);
+zkMeterBarContainer.appendChild(zkMeterLabel);
+zkMeterBarContainer.appendChild(zkMeterBar);
+zkMeterContainer.appendChild(zkLevelLabel); // Add level label first
+zkMeterContainer.appendChild(zkMeterBarContainer); // Then the meter
 document.body.appendChild(zkMeterContainer);
+
 
 // Zk Fun Fact Notification
 const zkFactNotification = document.createElement('div');
@@ -223,11 +244,11 @@ infoPanel.style.position = 'fixed';
 infoPanel.style.bottom = '10px';
 infoPanel.style.left = '50%';
 infoPanel.style.transform = 'translateX(-50%)';
-infoPanel.style.background = 'linear-gradient(180deg,rgb(255, 228, 241),rgb(254, 142, 198))';
+infoPanel.style.background = 'linear-gradient(180deg,rgb(255, 228, 241),rgb(251, 168, 210))';
 infoPanel.style.border = '2px solid #FF1493';
-infoPanel.style.boxShadow = 'inset 1px 1px 0px #FFB6C1, inset -1px -1px 0px #FF69B4, inset 2px 2px 0px #FFF, inset -2px -2px 0px #C71585';
+infoPanel.style.boxShadow = 'inset 2px 2px 0px #FFB6C1, inset -1px -1px 0px #FF69B4, inset 2px 2px 0px #FFF, inset -2px -2px 0px #C71585';
 infoPanel.style.padding = '10px 15px';
-infoPanel.style.width = '500px';
+infoPanel.style.width = '600px';
 infoPanel.style.fontFamily = "'Chicago', 'Arial', sans-serif";
 infoPanel.style.color = 'rgb(221, 48, 140)';
 
@@ -242,10 +263,10 @@ infoPanel.innerHTML = `
         
     </div>
     <h2 style="font-size: 20px; margin-top: 15px; margin-bottom: 10px;">Game Info</h2>
-    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">⚡️ Collect 3 power-ups for a Zk Shield (invincibility)!</p>
-    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">💡 Every 3 power-ups gives 1 Zk proof fact.</p>
+    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">⚡️ Collect power-ups to earn a Zk Shield (invincibility)—starts at 3, then increases each time!</p>
+    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">💡 Every power-up milestone unlocks a Zk proof fact to boost your knowledge!</p>
     <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">🌟 Play well to score high and discover a hidden Easter egg!</p>
-    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">🚗 Use ←→ to move, Enter to restart after Game Over.</p>
+    <p style="font-size: 17px; font-weight: 95; margin: 5px 0;">🚗 Use ←→ to move, Press Enter to restart after Game Over.</p>
 `;
 
 
@@ -780,49 +801,43 @@ function animate() {
     objects.forEach((obj, index) => {
         obj.z += state.speed * 2;
         
-        // Update z position while maintaining y position
         if (obj.type === 'powerUp') {
             obj.mesh.position.z = obj.z;
-            // Rotate power-ups around y-axis only to keep text visible
             obj.mesh.rotation.y += 0.01;
         } else {
             obj.mesh.position.z = obj.z;
         }
         
-        // Remove objects that have passed the player
         if (obj.z > 10) {
             scene.remove(obj.mesh);
             objects.splice(index, 1);
-            return; // Skip collision check for removed objects
+            return;
         }
         
-        // Collision detection (updated block)
         if (checkCollision(bike, obj.mesh)) {
             if (obj.type === 'obstacle') {
-                if (bike.isInvincible) {
-                    // Skip collision if invincible
-                    return;
-                }
+                if (bike.isInvincible) return;
                 scene.remove(obj.mesh);
                 objects.splice(index, 1);
                 gameOver();
             } else {
-                // Power-up collection logic
                 state.score += 1;
                 state.powerUpsCollected += 1;
-                state.zkPowerUpsForFact += 1;
+                powerUpsForNextMilestone += 1;
                 
-                const fillPercentage = (state.zkPowerUpsForFact / 3) * 100;
+                const fillPercentage = (powerUpsForNextMilestone / powerUpThreshold) * 100;
                 zkMeterFill.style.width = `${Math.min(fillPercentage, 100)}%`;
                 
-                if (state.zkPowerUpsForFact >= 3) {
-                    setTimeout(() => {
-                        state.zkPowerUpsForFact = 0;
-                        zkMeterFill.style.width = '0%';
-                    }, 1000); // 1-second delay
-                
+                if (powerUpsForNextMilestone >= powerUpThreshold) {
+                    // Update ZK Level and reset meter
+                    zkLevel += 1; // Increment level
+                    zkLevelLabel.textContent = `L${zkLevel}`; // Update label
+                    
+                    powerUpsForNextMilestone = 0;
+                    zkMeterFill.style.width = '0%';
                     showZkFunFact();
                     applyZkBonus();
+                    powerUpThreshold += 2; // Increase threshold
                 }
                 
                 if (state.powerUpsCollected % 10 === 0) {
@@ -836,25 +851,18 @@ function animate() {
             }
         }
 
-        // Reset the starfield position when it moves too far
         if (spaceElements.stars.position.z > 100) {
             spaceElements.stars.position.z = -100;
         }
     });
 
-    // Spawn new objects
     spawnObject();
 
-    // Update camera to follow bike more smoothly
-    const idealOffset = new THREE.Vector3(
-        bike.position.x * 0.8,
-        8,
-        15
-    );
+    // Update camera
+    const idealOffset = new THREE.Vector3(bike.position.x * 0.8, 8, 15);
     camera.position.lerp(idealOffset, 0.05);
     camera.lookAt(bike.position.x * 0.5, 0, bike.position.z - 5);
 
-    // Update UI
     scoreDisplay.textContent = state.score;
 
     renderer.render(scene, camera);
@@ -1372,27 +1380,30 @@ function displayQuizQuestion() {
     // Add window control listeners
     document.getElementById('quizCloseBtn').addEventListener('click', () => {
         zkQuizDialog.style.display = 'none';
-        endQuiz();
-    });
-    
-    document.getElementById('quizMinimizeBtn').addEventListener('click', () => {
-        zkQuizDialog.style.transform = 'translate(-50%, -50%) scale(0.1)';
-        zkQuizDialog.style.opacity = '0.3';
-        setTimeout(() => {
-            zkQuizDialog.style.transform = 'translate(-50%, -50%) scale(1)';
-            zkQuizDialog.style.opacity = '1';
-        }, 1000);
-    });
-    
-    document.getElementById('quizMaximizeBtn').addEventListener('click', () => {
-        if (zkQuizDialog.style.width === '450px' || !zkQuizDialog.style.width) {
-            zkQuizDialog.style.width = '600px';
-            zkQuizDialog.style.padding = '30px';
-        } else {
-            zkQuizDialog.style.width = '450px';
-            zkQuizDialog.style.padding = '25px';
+        // Trigger Game Over dialog with current score (including any quiz bonus earned so far)
+        state.score += quizBonusPoints;
+        finalScoreDisplay.textContent = state.score;
+        
+        if (state.score > state.highScore) {
+            state.highScore = state.score;
+            highScoreDisplay.textContent = state.highScore;
         }
+        // Save the score
+        saveHighScore(state.score);
+        
+        // Show Game Over dialog with animation
+        gameOverScreen.style.display = 'block';
+        gameOverScreen.style.opacity = '0';
+        gameOverScreen.style.transform = 'translate(-50%, -50%) scale(0.8)';
+        
+        setTimeout(() => {
+            gameOverScreen.style.opacity = '1';
+            gameOverScreen.style.transform = 'translate(-50%, -50%) scale(1)';
+        }, 50);
     });
+    
+    
+    
 }
 
 // Handle the player's answer
@@ -1472,11 +1483,25 @@ function startGame() {
     state.speed = state.baseSpeed;
     scoreDisplay.textContent = state.score;
     
-    
+    // Reset power-up milestone trackers
+    powerUpThreshold = 3;
+    powerUpsForNextMilestone = 0;
+    zkLevel = 1; // Reset ZK Level to L1
+    zkLevelLabel.textContent = 'L1'; // Reset label
     
     // Reset bike state
     bike.position.set(0, 0.3, 0);
     bike.isInvincible = false;
+    
+    // Remove any existing invincibility shield
+    const shieldMesh = bike.getObjectByName('invincibilityShield');
+    if (shieldMesh) {
+        bike.remove(shieldMesh);
+        shieldMesh.geometry.dispose();
+        shieldMesh.material.dispose();
+    }
+    
+    // Reset glow effect on the bike
     bike.children.forEach(child => {
         if (child.material) {
             child.material.emissive.set(0x000000);
@@ -1497,6 +1522,7 @@ function startGame() {
     // Start animation loop
     animate();
 }
+
 // Update the start game button event listener
 document.getElementById('startGameBtn').addEventListener('click', () => {
     const usernameInput = document.getElementById('usernameInput');
@@ -1579,11 +1605,15 @@ function createSpaceEnvironment() {
     const starPositions = [];
     
     // Define road boundaries
-    const roadMinX = -10.5; // Road width including shoulders
-    const roadMaxX = 10.5;
-    const roadMaxY = 5; // Maximum height above the road to consider "close"
-    const roadMinZ = -500; // Road extends from z = -500 (based on road length 1000)
-    const roadMaxZ = 500;
+    const roadWidth = 15; // Main road width (three lanes)
+    const shoulderWidth = 3; // Width of each shoulder
+    const totalRoadWidth = roadWidth + 2 * shoulderWidth; // Total width including shoulders
+    const roadMinX = -totalRoadWidth / 2; // Left edge (e.g., -10.5)
+    const roadMaxX = totalRoadWidth / 2;  // Right edge (e.g., 10.5)
+    const roadMinY = -0.2; // Bottom of the road (grid level)
+    const roadMaxY = 5;    // Height above road to exclude stars
+    const roadMinZ = -500; // Road starts at z = -500 (based on roadLength 1000)
+    const roadMaxZ = 500;  // Road ends at z = 500
 
     // Generate star positions, filtering out those near the road
     for (let i = 0; i < starCount; i++) {

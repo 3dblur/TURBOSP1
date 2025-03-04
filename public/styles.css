@@ -5,6 +5,16 @@
         background: #000000;
     }
     
+    .mb {
+        left:50%;
+        top:20 px;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 15px;
+        font-weight: 100;
+        z-index: 999999;
+        color: #ffffff;
+    }
+
     #gameCanvas {
         position: absolute;
         top: 0;
@@ -389,19 +399,23 @@
     /* Container for icons to stack them vertically in the top-right */
     .icon-container {
         position: fixed;
-        top: 20px;
-        right: 20px;
+        top: 25px;
+        right: 25px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 25px;
         z-index: 10; /* Above canvas but below UI */
+        padding: -2;
     }
     
     /* Style for each icon */
     .desktop-icon {
-        width: 50px;
+        width: 70px;
         height: auto;
         cursor: pointer;
+        border-radius: 3px;
+        
+        
     }
     
     /* Ensure links wrapping icons don’t affect layout */
@@ -409,6 +423,40 @@
         display: block; /* Ensures each icon takes its own line */
         line-height: 0; /* Removes extra space below images */
     }
+    .icon-container {
+    position: fixed;
+    top: 25px;
+    right: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    z-index: 10; /* Above canvas but below UI */
     
+    border-radius: 2px;
+    background-color: rgba(0, 0, 0, 0.5); /* Optional: semi-transparent background */
+    padding: 10px; /* Adds space inside the border */
+}
+
+.icon-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the image and text */
+    text-align: center;
+}
+
+.desktop-icon {
+    width: 65px; /* Adjust size as needed */
+    height: 65px; /* Adjust size as needed */
+    object-fit: cover; /* Ensures the image fills its space */
+    display: block; /* Removes bottom gap */
+}
+
+.icon-name {
+    color: white; /* Matches your white border theme */
+    font-family: 'Chicago', 'Arial', sans-serif; /* Matches your game’s retro font */
+    font-size: 14px; /* Adjust size as needed */
+    margin-top: 15px; /* Space between image and name */
+    text-shadow: 1px 1px 0px #c7158600; /* Matches your UI’s pink shadow */
+}
     */
     

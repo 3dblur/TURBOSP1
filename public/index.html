@@ -10,6 +10,7 @@
     <script src="https://unpkg.com/three@0.134.0/examples/js/loaders/SVGLoader.js"></script>
 </head>
 <body>
+    <h1 id="mb">madeby3dblur</h1>
     <div id="ui">
         <div id="score">1</div>
         <button id="leaderboard-btn">🏆 Leaderboard</button>
@@ -18,15 +19,25 @@
     <canvas id="gameCanvas"></canvas>
     <div class="icon-container">
         <a href="https://x.com/succinctlabs" target="_blank">
-            <img src="/icon1.png" class="desktop-icon" alt="Icon 1">
+            <div class="icon-wrapper">
+                <img src="/icon1.png" class="desktop-icon" alt="Succinct Labs">
+                <span class="icon-name">Succinct Labs</span>
+            </div>
         </a>
         <a href="https://x.com/pumatheuma" target="_blank">
-            <img src="/icon2.png" class="desktop-icon" alt="Icon 2">
+            <div class="icon-wrapper">
+                <img src="/icon2.png" class="desktop-icon" alt="Uma">
+                <span class="icon-name">Uma</span>
+            </div>
         </a>
         <a href="https://x.com/3dblurss" target="_blank">
-            <img src="/icon3.png" class="desktop-icon" alt="Icon 3">
+            <div class="icon-wrapper">
+                <img src="/icon3.png" class="desktop-icon" alt="3DBlur">
+                <span class="icon-name">3DBlur</span>
+            </div>
         </a>
     </div>
+    
     <!-- 
     <div id="gameOverScreen" style="display: none;">
         <h1>Game Over!</h1>
