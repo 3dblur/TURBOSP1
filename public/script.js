@@ -1583,7 +1583,15 @@ document.getElementById('startGameBtn').addEventListener('click', () => {
     console.log('Username set to:', state.username);
     usernameModal.style.display = 'none';
     infoPanel.style.display = 'none'; // Hide info panel
-    
+    if (isMobile()) {
+        document.body.style.zoom = '1'; // Force reset zoom to 1:1
+        window.scrollTo(0, 0); // Scroll to top to normalize view
+        // Reset viewport meta dynamically to enforce scale
+        const meta = document.querySelector('meta[name="viewport"]');
+        if (meta) {
+            meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+        }
+    }
     // Start the game
     startGame();
 });
@@ -1607,8 +1615,8 @@ const isMobile = (() => {
 
 // Touch Control Module (scalable for future mechanics)
 const TouchControls = {
-    SWIPE_THRESHOLD: 30, // Configurable swipe distance
-    SWIPE_COOLDOWN: 150, // Reduced for faster response
+    SWIPE_THRESHOLD: 15, // Configurable swipe distance
+    SWIPE_COOLDOWN: 50, // Reduced for faster response
     touchStartX: 0,
     touchCurrentX: 0,
     lastSwipeTime: 0,
