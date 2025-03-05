@@ -346,12 +346,12 @@ usernameContent.innerHTML = `
     <div style="font-size: 18px; font-weight: bold; text-align: center; margin-top: 20px; margin-bottom: 10px; color: #FFF; text-shadow: 1px 1px 0px #C71585;">
         Enter Your Username
     </div>
-    <div style="font-size: 14px; text-align: center; margin-bottom: 20px; color: #FFF; text-shadow: 1px 1px 0px #C71585;">
+    <div style="font-size: 16px; text-align: center; margin-bottom: 20px; color: #FFF; text-shadow: 1px 1px 0px #C71585;">
         Please enter a username to track your scores on the leaderboard.
     </div>
-    <input type="text" id="usernameInput" placeholder="Username" style="width: 100%; padding: 8px; margin-bottom: 20px; border: 2px solid #FF1493; background: #FFE4E1; font-family: 'Chicago', 'Arial', sans-serif; font-size: 14px; box-sizing: border-box; color: #C71585; text-align: center;">
+    <input type="text" id="usernameInput" placeholder="Username" style="width: 100%; padding: 8px; margin-bottom: 20px; border: 2px solid #FF1493; background: #FFE4E1; font-family: 'Chicago', 'Arial', sans-serif; font-size: 16px; box-sizing: border-box; color: #C71585; text-align: center;">
     <div style="text-align: center;">
-        <button id="startGameBtn" style="padding: 8px 20px; border: 2px solid #FF1493; background: #FF69B4; font-family: 'Chicago', 'Arial', sans-serif; font-size: 14px; cursor: pointer; color: #FFF; text-shadow: 1px 1px 0px #C71585;">Start Game</button>
+        <button id="startGameBtn" style="padding: 8px 20px; border: 2px solid #FF1493; background: #FF69B4; font-family: 'Chicago', 'Arial', sans-serif; font-size: 16px; cursor: pointer; color: #FFF; text-shadow: 1px 1px 0px #C71585;">Start Game</button>
     </div>
 `;
 
@@ -1591,6 +1591,7 @@ document.getElementById('startGameBtn').addEventListener('click', () => {
     console.log('Username set to:', state.username);
     usernameModal.style.display = 'none';
     infoPanel.style.display = 'none'; // Hide info panel
+    
     if (isMobile()) {
         document.body.style.zoom = '1'; // Force reset zoom to 1:1
         window.scrollTo(0, 0); // Scroll to top to normalize view
