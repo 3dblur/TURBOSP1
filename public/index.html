@@ -50,9 +50,10 @@
     </div>
     new one below this
     -->
+    <!--
     <div id="gameOverScreen" style="display: none;">
         
-        
+    
         <h1>Game Over!</h1>
         <div class="score-section">
         <p class="score-text">Score: <span id="finalScore">0</span></p>
@@ -65,6 +66,23 @@
         </div>
     </div>
 
+-->
+    <div id="gameOverScreen" style="display: none;">
+    <h1>Game Over!</h1>
+    <div class="score-section">
+        <p class="score-text">Score: <span id="finalScore">0</span></p>
+        <p class="high-score-text">High Score: <span id="highScore">1</span></p>
+    </div>
+    <p class="play-again">Press <a id="enter"> ENTER </a> to Play Again</p>
+    <div class="button-container">
+        <a href="https://blog.succinct.xyz" target="_blank"><button id="shareBtn">Learn More</button></a>
+        <button id="lockInBtn">Lock In</button>
+        <button id="mobileRestartBtn">Restart</button> 
+    </div>
+</div>
+
+
+
     <div id="leaderboard" style="display: none;">
         <h3 id="lbheading">Leaderboard</h3>
         <ul id="leaderboardList"></ul>
@@ -72,6 +90,7 @@
     </div>
     <!--
     <div id="garage" style="display: none;">
+        
         <h2>Garage</h2>
         <p>Coming Soon!</p>
         <button id="closeGarage">Close</button>

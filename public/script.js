@@ -66,7 +66,9 @@ const garage = document.getElementById('garage');
 
 // Add these elements to the top of the file
 const speedNotification = document.createElement('div');
+
 speedNotification.id = 'speedNotification';
+/*
 speedNotification.style.position = 'absolute';
 speedNotification.style.top = '20px';
 speedNotification.style.left = '50%';
@@ -78,6 +80,7 @@ speedNotification.style.borderRadius = '5px';
 speedNotification.style.fontWeight = 'bold';
 speedNotification.style.zIndex = '1000';
 speedNotification.style.display = 'none';
+*/
 document.body.appendChild(speedNotification);
 
 /// Zk Knowledge Meter UI
@@ -175,7 +178,9 @@ backgroundAudio.play().then(() => {
 
 // Zk Fun Fact Notification
 const zkFactNotification = document.createElement('div');
+
 zkFactNotification.id = 'zkFactNotification';
+/*
 zkFactNotification.style.position = 'absolute';
 zkFactNotification.style.top = '80px'; // Below the speed notification
 zkFactNotification.style.left = '50%';
@@ -189,11 +194,13 @@ zkFactNotification.style.padding = '15px 20px';
 zkFactNotification.style.borderRadius = '5px';
 zkFactNotification.style.fontFamily = "'Chicago', 'Arial', sans-serif";
 zkFactNotification.style.fontSize = '18px';
+
 zkFactNotification.style.fontWeight = '100';
 zkFactNotification.style.maxWidth = '400px';
 zkFactNotification.style.textAlign = 'center';
 zkFactNotification.style.zIndex = '1000';
 zkFactNotification.style.display = 'none';
+*/
 document.body.appendChild(zkFactNotification);
 
 // Zk Quiz Dialog
@@ -1001,9 +1008,13 @@ document.getElementById('closeGarage').addEventListener('click', () => {
 });
 
 shareBtn.addEventListener('click', () => {
+    // Simulate sharing on X (simplified, no real API call h  
+});
 
-    // Simulate sharing on X (simplified, no real API call here)
-   
+document.getElementById('mobileRestartBtn').addEventListener('click', () => {
+    if (state.gameOver) {
+        resetGame();
+    }
 });
 
 lockInBtn.addEventListener('click', () => {
@@ -1586,6 +1597,403 @@ document.getElementById('startGameBtn').addEventListener('click', () => {
     //startGame();
 //});
 
+//mobile optimisation start
+// Utility to detect mobile devices (fast, cached result)
+const isMobile = (() => {
+    const mobileCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                        window.innerWidth <= 768;
+    return () => mobileCheck; // Memoized for speed
+})();
+
+// Touch Control Module (scalable for future mechanics)
+const TouchControls = {
+    SWIPE_THRESHOLD: 30, // Configurable swipe distance
+    SWIPE_COOLDOWN: 150, // Reduced for faster response
+    touchStartX: 0,
+    touchCurrentX: 0,
+    lastSwipeTime: 0,
+    active: false,
+
+    init() {
+        if (!isMobile()) return; // Skip on desktop
+        this.active = true;
+
+        // Use object pooling for event data to reduce garbage collection
+        const touchHandler = {
+            start: (e) => {
+                this.touchStartX = e.touches[0].clientX;
+                this.touchCurrentX = this.touchStartX;
+            },
+            move: (e) => {
+                this.touchCurrentX = e.touches[0].clientX;
+                e.preventDefault(); // Prevent scroll (non-passive for control)
+            },
+            end: () => {
+                const now = performance.now(); // High-precision timing
+                if (now - this.lastSwipeTime < this.SWIPE_COOLDOWN) return;
+
+                const swipeDistance = this.touchCurrentX - this.touchStartX;
+                if (Math.abs(swipeDistance) < this.SWIPE_THRESHOLD || !state.canChangeLane) return;
+
+                if (swipeDistance > 0 && state.bikeLane < 2) {
+                    state.targetLane = state.bikeLane + 1;
+                    state.bikeLane = state.targetLane;
+                } else if (swipeDistance < 0 && state.bikeLane > 0) {
+                    state.targetLane = state.bikeLane - 1;
+                    state.bikeLane = state.targetLane;
+                }
+                state.canChangeLane = false;
+                this.lastSwipeTime = now;
+
+                // Reset lane change flag asynchronously
+                requestAnimationFrame(() => {
+                    state.canChangeLane = true;
+                });
+            }
+        };
+
+        // Add listeners with cleanup capability
+        document.addEventListener('touchstart', touchHandler.start, { passive: true });
+        document.addEventListener('touchmove', touchHandler.move, { passive: false });
+        document.addEventListener('touchend', touchHandler.end, { passive: true });
+
+        // Return cleanup function for scalability (e.g., game pause/stop)
+        return () => {
+            document.removeEventListener('touchstart', touchHandler.start);
+            document.removeEventListener('touchmove', touchHandler.move);
+            document.removeEventListener('touchend', touchHandler.end);
+        };
+    }
+};
+
+// Mobile Optimization Module
+const MobileOptimizer = {
+    init() {
+        if (!isMobile()) return;
+
+        // Optimize Three.js rendering
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Balanced quality/performance
+        renderer.shadowMap.enabled = false; // Shadows off for speed
+        camera.fov = 85; // Wider FOV for small screens
+        camera.updateProjectionMatrix();
+
+        // Reduce star count for mobile (configurable)
+        const stars = scene.getObjectByName('stars');
+        if (stars) {
+            const positions = stars.geometry.attributes.position.array;
+            const reducedStars = new Float32Array(Math.floor(positions.length * 0.7)); // 70% of stars
+            reducedStars.set(positions.slice(0, reducedStars.length));
+            stars.geometry.setAttribute('position', new THREE.BufferAttribute(reducedStars, 3));
+            stars.geometry.attributes.position.needsUpdate = true;
+        }
+    }
+};
+
+// Mobile UI Module (scalable for additional popups)
+const MobileUI = {
+    infoButton: null,
+    cleanup: null,
+
+    createInfoPopup() {
+        if (!isMobile()) return;
+
+        // Reuse existing infoPanel, modify for mobile
+        infoPanel.style.display = 'none';
+        infoPanel.style.position = 'fixed';
+        infoPanel.style.top = '50%';
+        infoPanel.style.left = '50%';
+        infoPanel.style.transform = 'translate(-50%, -50%)';
+        infoPanel.style.width = '90vw';
+        infoPanel.style.maxHeight = '80vh';
+        infoPanel.style.overflowY = 'auto';
+        infoPanel.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+        infoPanel.style.zIndex = '2600';
+
+        // Info Button
+        this.infoButton = document.createElement('button');
+        Object.assign(this.infoButton.style, {
+            position: 'fixed',
+            bottom: '10px',
+            left: '10px',
+            padding: '5px 10px',
+            background: 'linear-gradient(180deg, #FF69B4, #FFC1CC)',
+            border: '2px solid #FF1493',
+            color: '#FFF',
+            textShadow: '1px 1px 0px #C71585',
+            fontFamily: "'Chicago', 'Arial', sans-serif",
+            fontSize: '35px',
+            borderRadius: '5px',
+            zIndex: '2500',
+            cursor: 'pointer'
+        });
+        this.infoButton.textContent = 'ℹ';
+        document.body.appendChild(this.infoButton);
+
+        // Close Button (reused if already present, otherwise created)
+        let closeBtn = infoPanel.querySelector('#closeInfoBtn');
+        if (!closeBtn) {
+            closeBtn = document.createElement('button');
+            closeBtn.id = 'closeInfoBtn';
+            Object.assign(closeBtn.style, {
+                display: 'block',
+                margin: '10px auto',
+                padding: '8px 20px',
+                background: '#FF69B4',
+                border: '2px solid #FF1493',
+                color: '#FFF',
+                fontFamily: "'Chicago', 'Arial', sans-serif",
+                fontSize: '14px',
+                borderRadius: '5px',
+                cursor: 'pointer'
+            });
+            closeBtn.textContent = 'Close';
+            infoPanel.appendChild(closeBtn);
+        }
+
+        // Event handlers (throttled for performance)
+        const togglePopup = (show) => {
+            infoPanel.style.opacity = show ? '0' : '1';
+            infoPanel.style.transform = show ? 'translate(-50%, -50%) scale(0.8)' : 'translate(-50%, -50%) scale(1)';
+            requestAnimationFrame(() => {
+                infoPanel.style.display = show ? 'block' : 'none';
+                infoPanel.style.opacity = show ? '1' : '0';
+                if (show) infoPanel.style.transform = 'translate(-50%, -50%) scale(1)';
+            });
+        };
+
+        this.infoButton.addEventListener('click', () => togglePopup(true));
+        closeBtn.addEventListener('click', () => togglePopup(false));
+
+        // Cleanup function
+        this.cleanup = () => {
+            this.infoButton.remove();
+            closeBtn.remove();
+        };
+    }
+};
+
+// CSS for Mobile (append to existing styles)
+/* working mobile styles 
+const mobileStyles = `
+    @media (max-width: 768px) {
+        #gameCanvas {
+            width: 100vw !important;
+            height: 100vh !important;
+            touch-action: none; 
+        }
+        #score {
+            font-size: 30px;
+            top: 5px;
+            left: 5px;
+        }
+        #zkMeterContainer {
+            bottom: 40px;
+            right: 5px;
+            transform: scale(0.75);
+            transform-origin: bottom right;
+        }
+        #zkFactNotification {
+            width: 85vw;
+            max-width: 280px;
+            top: 50px;
+            font-size: 13px;
+            padding: 8px;
+        }
+
+        
+
+        #zkQuizDialog {
+            width: 90vw;
+            max-width: 320px;
+            padding: 12px;
+        }
+        #gameOverScreen {
+            width: 90vw;
+            max-width: 320px;
+        }
+        #leaderboard {
+            width: 90vw;
+            max-width: 320px;
+        }
+        #garage {
+            width: 90vw;
+            max-width: 320px;
+        }
+    }
+`;
+document.querySelector('style').textContent += mobileStyles;
+*/
+
+// Base styles for desktop (and shared styles)
+const baseStyles = `
+    #speedNotification {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-family: 'Chicago', 'Arial', sans-serif;
+        font-size: 16px;
+        font-weight: bold;
+        z-index: 1000;
+        display: none;
+        width: fit-content; 
+    }
+    #zkFactNotification {
+        position: absolute;
+        top: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, #FF69B4, #FFC1CC);
+        border: 2px solid #FF1493;
+        box-shadow: inset 1px 1px 0px #FFB6C1, inset -1px -1px 0px #FF69B4, inset 2px 2px 0px #FFF, inset -2px -2px 0px #C71585;
+        color: #FFF;
+        text-shadow: 1px 1px 0pxrgb(129, 11, 86);
+        padding: 15px 20px;
+        border-radius: 5px;
+        font-family: 'Chicago', 'Arial', sans-serif;
+        font-size: 18px;
+        font-weight: 100;
+        max-width: 400px;
+        text-align: center;
+        z-index: 1000;
+        display: none;
+    }
+    #zkMeterContainer {
+        position: absolute;
+        bottom: 15px;
+        right: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 5px;
+        z-index: 1000;
+    }
+    #zkLevelLabel {
+        font-family: 'Chicago', 'Arial', sans-serif;
+        color: #FFF;
+        text-shadow: 1px 1px 0px rgb(113, 16, 78);
+        font-size: 40px;
+        font-weight: 99;
+        border-color: #ffffff;
+        border-width: 3px;
+        border-style: solid;
+        border-radius: 3px;
+        background-color: rgba(0, 0, 0, 0);
+        padding: 10px;
+    }
+    #zkMeterBar {
+        width: 150px;
+        height: 40px;
+        background: #333;
+        border: 3px solid #ffffff;
+        border-radius: 7px;
+        overflow: hidden;
+    }
+    #zkMeterFill {
+        width: 0%;
+        height: 100%;
+        background: #FF1493;
+        transition: width 0.3s ease;
+    }
+`;
+
+// Mobile-specific styles
+const mobileStyles = `
+    @media (max-width: 768px) {
+        #gameCanvas {
+            width: 100vw !important;
+            height: 100vh !important;
+            touch-action: none; 
+        }
+        #score {
+            font-size: 30px;
+            top: 5px;
+            left: 5px;
+        }
+        #zkMeterContainer {
+            bottom: 40px;
+            right: 5px;
+            transform: scale(0.75);
+            transform-origin: bottom right;
+        }
+        #zkFactNotification {
+            position: absolute;
+            top: 90px;
+            max-width: 400px; 
+            width: auto; 
+            padding: 8px 12px; 
+            font-size: 13px; 
+            word-wrap: break-word; 
+            overflow-wrap: break-word; 
+            white-space: normal; 
+            box-sizing: border-box; 
+            opacity: 1;
+        }
+        #speedNotification {
+            bottom: 60px !important; 
+            top: auto !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            max-width: 250px;
+            padding: 8px 12px;
+            font-size: 14px;
+            width: fit-content;
+        }
+        #zkQuizDialog {
+            width: 90vw;
+            max-width: 320px;
+            padding: 12px;
+        }
+        #gameOverScreen {
+            width: 90vw;
+            max-width: 320px;
+        }
+        #leaderboard {
+            width: 90vw;
+            max-width: 320px;
+        }
+        #garage {
+            width: 90vw;
+            max-width: 320px;
+        }
+    }
+`;
+
+// Append both base and mobile styles
+document.querySelector('style').textContent += baseStyles + mobileStyles;
+
+// Initialize Mobile Features
+const mobileCleanup = [];
+mobileCleanup.push(TouchControls.init());
+MobileOptimizer.init();
+MobileUI.createInfoPopup();
+
+// Scalability: Add cleanup for game reset/pause
+function cleanupMobileFeatures() {
+    mobileCleanup.forEach(cleanup => cleanup && cleanup());
+    MobileUI.cleanup && MobileUI.cleanup();
+}
+
+// Hook into existing resetGame function
+const originalResetGame = resetGame;
+resetGame = function() {
+    cleanupMobileFeatures();
+    originalResetGame();
+    mobileCleanup.length = 0;
+    mobileCleanup.push(TouchControls.init());
+    MobileOptimizer.init();
+    MobileUI.createInfoPopup();
+};
+//mobile optimisation end
+
+//mobile ui restart button 
+
+
+
 // Prevent the game from starting automatically
 window.onload = function() {
     // Don't start animate() here - wait for username
@@ -1696,3 +2104,4 @@ function createSpaceEnvironment() {
 
 // Call this function right after scene setup
 const spaceElements = createSpaceEnvironment(); 
+

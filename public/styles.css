@@ -214,6 +214,21 @@
     transition: background 0.2s ease, transform 0.1s ease; /* Smooth hover effects */
 }
 
+#mobileRestartBtn {
+    display: none;
+}
+
+/* Show only on mobile */
+@media (max-width: 768px) {
+    #mobileRestartBtn {
+        display: inline-block; /* Matches other buttons */
+    }
+    #gameOverScreen .button-container {
+        flex-wrap: wrap; /* Allows buttons to wrap on small screens */
+        gap: 10px; /* Adjust gap for mobile */
+    }
+}
+
 /* Button Hover Effects */
 #gameOverScreen button:hover {
     background: #FF1493;
@@ -385,6 +400,8 @@
         align-items: center;
         margin-left: 167px;
     }
+
+    
     
     #leaderboard #closeLeaderboard:hover {
         background: #FF69B4; /* Hot pink on hover */
@@ -405,7 +422,9 @@
         flex-direction: column;
         gap: 25px;
         z-index: 10; /* Above canvas but below UI */
-        padding: -2;
+        border-radius: 2px;
+        background-color: rgba(0, 0, 0, 0); /* Optional: semi-transparent background */
+        padding: 8px;
     }
     
     /* Style for each icon */
@@ -423,19 +442,7 @@
         display: block; /* Ensures each icon takes its own line */
         line-height: 0; /* Removes extra space below images */
     }
-    .icon-container {
-    position: fixed;
-    top: 25px;
-    right: 25px;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-    z-index: 10; /* Above canvas but below UI */
     
-    border-radius: 2px;
-    background-color: rgba(0, 0, 0, 0.5); /* Optional: semi-transparent background */
-    padding: 10px; /* Adds space inside the border */
-}
 
 .icon-wrapper {
     display: flex;
@@ -458,4 +465,31 @@
     margin-top: 15px; /* Space between image and name */
     text-shadow: 1px 1px 0px #c7158600; /* Matches your UI’s pink shadow */
 }
-    */
+    
+    @media (max-width: 768px) {
+        #leaderboard #closeLeaderboard {
+            margin-left: 130px; /* Remove fixed margin for centering */   
+        }
+        .icon-container {
+            position: fixed;
+            top: 70px;
+            right: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            z-index: 10; /* Above canvas but below UI */
+            border-radius: 2px;
+            background-color: rgba(0, 0, 0, 0); /* Optional: semi-transparent background */
+            padding: 2px;
+        }
+        
+        /* Style for each icon */
+        .desktop-icon {
+            width: 50px;
+            height: auto;
+            cursor: pointer;
+            border-radius: 3px;
+            
+            
+        }
+    }
