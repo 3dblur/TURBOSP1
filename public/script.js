@@ -1654,9 +1654,9 @@ const TouchControls = {
                 this.lastSwipeTime = now;
 
                 // Reset lane change flag asynchronously
-                requestAnimationFrame(() => {
+                
                     state.canChangeLane = true;
-                });
+                
             }
         };
 
@@ -1712,7 +1712,7 @@ const MobileUI = {
         infoPanel.style.left = '50%';
         infoPanel.style.transform = 'translate(-50%, -50%)';
         infoPanel.style.width = '90vw';
-        infoPanel.style.maxHeight = '80vh';
+        infoPanel.style.Height = '90vh';
         infoPanel.style.overflowY = 'auto';
         infoPanel.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
         infoPanel.style.zIndex = '2600';
@@ -1723,18 +1723,19 @@ const MobileUI = {
             position: 'fixed',
             bottom: '10px',
             left: '10px',
-            padding: '5px 10px',
+            padding: '5px 20px',
             background: 'linear-gradient(180deg, #FF69B4, #FFC1CC)',
             border: '2px solid #FF1493',
             color: '#FFF',
             textShadow: '1px 1px 0px #C71585',
-            fontFamily: "'Chicago', 'Arial', sans-serif",
+            fontFamily: "times new roman",
+            fontWeight: 'bold',
             fontSize: '35px',
             borderRadius: '5px',
             zIndex: '2500',
             cursor: 'pointer'
         });
-        this.infoButton.textContent = 'ℹ';
+        this.infoButton.textContent = 'i';
         document.body.appendChild(this.infoButton);
 
         // Close Button (reused if already present, otherwise created)

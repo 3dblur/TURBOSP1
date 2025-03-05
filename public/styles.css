@@ -492,4 +492,13 @@
             
             
         }
+        #ui button {
+            background: #FF69B4;
+            color: white;
+            border: none;
+            font-size: 16px;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
     }
