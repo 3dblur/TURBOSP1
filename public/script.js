@@ -287,6 +287,7 @@ infoPanel.style.border = '2px solid #FF1493';
 infoPanel.style.boxShadow = 'inset 2px 2px 0px #FFB6C1, inset -1px -1px 0px #FF69B4, inset 2px 2px 0px #FFF, inset -2px -2px 0px #C71585';
 infoPanel.style.padding = '10px 15px';
 infoPanel.style.width = '730px';
+infoPanel.style.height = 'auto';
 infoPanel.style.fontFamily = "'Chicago', 'Arial', sans-serif";
 infoPanel.style.color = 'rgb(221, 48, 140)';
 
@@ -933,10 +934,17 @@ function updateControls() {
     const targetX = state.lanePositions[state.bikeLane];
     const currentX = bike.position.x;
     
-    // Smooth position transition
-    bike.position.x += (targetX - currentX) * 0.1;
+    if (isMobile()) {
+        // Option 1: Faster lerp for mobile (snappy but still smooth)
+        bike.position.x += (targetX - currentX) * 0.3; // Increased from 0.1 to 0.5
+        // Option 2: Instant snap (uncomment to use instead)
+        // bike.position.x = targetX;
+    } else {
+        // Desktop: Keep smoother transition
+        bike.position.x += (targetX - currentX) * 0.1;
+    }
     
-    // Bike lean effect
+    // Bike lean effect (optional: reduce for snappier feel)
     const lean = (targetX - currentX) * 0.3;
     bike.rotation.z = -lean;
     bike.rotation.y = lean * 0.2;
@@ -1705,17 +1713,21 @@ const MobileUI = {
     createInfoPopup() {
         if (!isMobile()) return;
 
-        // Reuse existing infoPanel, modify for mobile
+        // Modify infoPanel for mobile
         infoPanel.style.display = 'none';
         infoPanel.style.position = 'fixed';
-        infoPanel.style.top = '50%';
+        infoPanel.style.top = '50%'; // Center vertically
+        infoPanel.style.bottom = ''; // Clear desktop bottom positioning
         infoPanel.style.left = '50%';
         infoPanel.style.transform = 'translate(-50%, -50%)';
-        infoPanel.style.width = '90vw';
-        infoPanel.style.Height = '90vh';
-        infoPanel.style.overflowY = 'auto';
+        infoPanel.style.width = '95vw'; // Mobile width
+        infoPanel.style.height = 'auto'; // Fit content
+        infoPanel.style.maxHeight = '98vh'; // Cap at viewport height
+        infoPanel.style.overflowY = 'auto'; // Scroll if needed
         infoPanel.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-        infoPanel.style.zIndex = '2600';
+        infoPanel.style.zIndex = '9999';
+        infoPanel.style.boxSizing = 'border-box';
+        infoPanel.style.padding = '10px';
 
         // Info Button
         this.infoButton = document.createElement('button');
@@ -1723,43 +1735,34 @@ const MobileUI = {
             position: 'fixed',
             bottom: '10px',
             left: '10px',
-            padding: '5px 20px',
+            padding: '5px 10px',
             background: 'linear-gradient(180deg, #FF69B4, #FFC1CC)',
             border: '2px solid #FF1493',
             color: '#FFF',
             textShadow: '1px 1px 0px #C71585',
-            fontFamily: "times new roman",
-            fontWeight: 'bold',
+            fontFamily: "'Chicago', 'Arial', sans-serif",
             fontSize: '35px',
             borderRadius: '5px',
-            zIndex: '2500',
+            zIndex: '9999',
             cursor: 'pointer'
         });
-        this.infoButton.textContent = 'i';
+        this.infoButton.textContent = 'ℹ';
         document.body.appendChild(this.infoButton);
 
-        // Close Button (reused if already present, otherwise created)
-        let closeBtn = infoPanel.querySelector('#closeInfoBtn');
-        if (!closeBtn) {
-            closeBtn = document.createElement('button');
-            closeBtn.id = 'closeInfoBtn';
-            Object.assign(closeBtn.style, {
-                display: 'block',
-                margin: '10px auto',
-                padding: '8px 20px',
-                background: '#FF69B4',
-                border: '2px solid #FF1493',
-                color: '#FFF',
-                fontFamily: "'Chicago', 'Arial', sans-serif",
-                fontSize: '14px',
-                borderRadius: '5px',
-                cursor: 'pointer'
-            });
-            closeBtn.textContent = 'Close';
-            infoPanel.appendChild(closeBtn);
-        }
+        // Update content for mobile (optimize for smaller screens)
+        infoPanel.innerHTML = `
+            <div style="position: absolute; top: 5px; left: 5px; display: flex; gap: 5px;"></div>
+            <h2 style="font-size: 18px; margin: 10px 0 8px;">Game Info</h2>
+            <p style="font-size: 14px; font-weight: 95; margin: 4px 0;">🚗 Use ←→ to move, Press Enter to restart after Game's Over.</p>
+            <p style="font-size: 14px; font-weight: 95; margin: 4px 0;">⚡️ Collect power-ups and fill up your ZK Meter to get a Zk Shield</p>
+            <p style="font-size: 14px; font-weight: 95; margin: 4px 0;"> (P.S It keeps getting tougher to fill! )</p>
+            <p style="font-size: 14px; font-weight: 95; margin: 4px 0;">💡 Every Time you level up your ZK METER it unlocks a Zk proof fact to boost your knowledge!</p>
+            <p style="font-size: 14px; font-weight: 95; margin: 4px 0;"> (P.S They might be Valuable so make sure to pay attention to them! )</p>
+            <p style="font-size: 14px; font-weight: 95; margin: 4px 0;">🌟 Score high and discover an Easter egg (might get you some ez points)!</p>
+            <button id="closeInfoBtn" style="display: block; margin: 10px auto; padding: 8px 20px; background: #FF69B4; border: 2px solid #FF1493; color: #FFF; font-family: 'Chicago', 'Arial', sans-serif; font-size: 14px; border-radius: 5px; cursor: pointer; z-index: 2700;">Close</button>
+        `;
 
-        // Event handlers (throttled for performance)
+        // Event handlers
         const togglePopup = (show) => {
             infoPanel.style.opacity = show ? '0' : '1';
             infoPanel.style.transform = show ? 'translate(-50%, -50%) scale(0.8)' : 'translate(-50%, -50%) scale(1)';
@@ -1767,16 +1770,16 @@ const MobileUI = {
                 infoPanel.style.display = show ? 'block' : 'none';
                 infoPanel.style.opacity = show ? '1' : '0';
                 if (show) infoPanel.style.transform = 'translate(-50%, -50%) scale(1)';
+                console.log('Info panel height:', infoPanel.offsetHeight);
             });
         };
 
         this.infoButton.addEventListener('click', () => togglePopup(true));
-        closeBtn.addEventListener('click', () => togglePopup(false));
+        infoPanel.querySelector('#closeInfoBtn').addEventListener('click', () => togglePopup(false));
 
         // Cleanup function
         this.cleanup = () => {
             this.infoButton.remove();
-            closeBtn.remove();
         };
     }
 };
