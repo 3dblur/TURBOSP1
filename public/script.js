@@ -1446,9 +1446,6 @@ lockInBtn.addEventListener('click', () => {
     }
 
     alert("You're now locked in");
-
-   
-
 });
 
 // Handle window resize
