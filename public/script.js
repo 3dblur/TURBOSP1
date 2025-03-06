@@ -1268,7 +1268,7 @@ const state = {
     targetLane: 1, // Add this to track the target lane
     powerUpsCollected: 0,
     zkPowerUpsForFact: 0,
-    baseSpeed: 0.5,
+    baseSpeed: 0.4,
     speedMultiplier: 1,
     //obstacleCount: 0,  // Track obstacles for power-up spawning
     adjacentObstacleThreshold: 4,  // Minimum power-ups needed before adjacent obstacles can appear
@@ -1756,7 +1756,7 @@ function spawnObject() {
     const maxPowerUpPercentage = 0.35; // Cap power-ups at 40% of visible objects
     const minObstaclesBetweenPowerUps = 3; // Require at least 2 obstacles between power-ups
     const minSpawnCooldown = 130;  // Adjusted: Increased to 0.75s for more spacing
-    const maxSpawnCooldown = 600; // Adjusted: Increased to 2s for more spacing
+    const maxSpawnCooldown = 300; // Adjusted: Increased to 2s for more spacing
     
     // Count visible objects
     const visibleObjects = objects.filter(obj => obj.z < despawnZ && obj.z > maxSpawnZOffset);
