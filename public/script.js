@@ -226,13 +226,41 @@ window.audioManager = {
 
 
 
-// Test audio: Load audio files and play button sound on startGameBtn click
-// Test audio: Load audio files and play button sound on lockInBtn click
+function initAudioOnFirstInteraction() {
+    if (window.audioManager) {
+      // Initialize the AudioContext
+      window.audioManager.initAudio();
+      // Load all audio files and start background music
+      window.audioManager.loadAudioFiles().then(() => {
+        console.log('Audio files loaded successfully');
+        // Start background music immediately after loading (optional, adjust as needed)
+        window.audioManager.playGameMusic();
+      }).catch(error => {
+        console.error('Failed to load audio files:', error);
+      });
+    }
+    // Remove both click and touchstart listeners after first interaction
+    document.removeEventListener('click', initAudioOnFirstInteraction);
+    document.removeEventListener('touchstart', initAudioOnFirstInteraction);
+  }
+  
+  // Add listeners for both click (PC) and touchstart (mobile) events
+  // Place these outside DOMContentLoaded, near the top of script.js after audioManager definition
+  document.addEventListener('click', initAudioOnFirstInteraction, { once: true });
+  document.addEventListener('touchstart', initAudioOnFirstInteraction, { once: true });
+  
+  // Optional: Ensure audio context resumes on subsequent taps if suspended
+  // Add this below the above listeners
+  document.addEventListener('touchstart', () => {
+    if (window.audioManager && window.audioManager.isAudioReady()) {
+      window.audioManager.resumeContext();
+    }
+  });
 
 
 // Add this to your script.js file right after your existing audio initialization code
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize audio on first interaction (you already have this)
+  /*  // Initialize audio on first interaction (you already have this)
     document.addEventListener('click', function initAudioOnFirstInteraction() {
       if (window.audioManager) {
         window.audioManager.initAudio();
@@ -245,7 +273,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       document.removeEventListener('click', initAudioOnFirstInteraction);
     }, { once: true });
-    
+    */
+
     // Global audio functions for your game
     window.gameAudio = {
       // Game state audio
