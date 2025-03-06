@@ -4,12 +4,25 @@
 // We'll create the AudioContext only when needed
 let audioContext = null;
 
+// iOS Silent Mode Workaround - HTML5 Audio Element
+const iosSilentAudio = new Audio('silent.mp3'); // 0.5s silent MP3 file
+iosSilentAudio.preload = 'auto'; // Preload the silent file for immediate playback
+
 // Store audio buffers for all sounds
 const audioBuffers = {};
 let gameMusicSource = null;
 let gameMusicGainNode = null;
 let bikeSource = null;
 let bikeGainNode = null;
+
+// Silent buffer for iOS silent mode workaround
+function createSilentBuffer(context) {
+  const duration = 0.1; // 0.1 seconds of silence
+  const sampleRate = context.sampleRate;
+  const frameCount = sampleRate * duration;
+  const silentBuffer = context.createBuffer(1, frameCount, sampleRate);
+  return silentBuffer;
+}
 
 // One-shot sounds (no looping)
 const oneShotSounds = {
@@ -24,16 +37,36 @@ const oneShotSounds = {
 };
 
 // Initialize audio system - call this on user interaction (click, touch, button press)
+// audioManager.js
 function initAudio() {
-  if (audioContext === null) {
-    audioContext = new AudioContext();
-    return true;
-  } else if (audioContext.state === 'suspended') {
-    audioContext.resume();
-    return true;
-  }
-  return false;
+    if (audioContext === null) {
+      audioContext = new AudioContext();
+      
+      // iOS Silent Mode Workaround - Use HTMLAudioElement
+      iosSilentAudio.play().catch(e => {
+        console.log('iOS silent audio play failed:', e);
+      }).finally(() => {
+        iosSilentAudio.pause();
+        iosSilentAudio.currentTime = 0;
+      });
+
+      console.log('AudioContext initialized with iOS silent workaround');
+      return true;
+    } else if (audioContext.state === 'suspended') {
+      audioContext.resume().then(() => {
+        // Add HTML audio element play after resume
+        iosSilentAudio.play().catch(e => {
+          console.log('iOS silent audio resume failed:', e);
+        }).finally(() => {
+          iosSilentAudio.pause();
+          iosSilentAudio.currentTime = 0;
+        });
+      });
+      return true;
+    }
+    return false;
 }
+
 
 // Load all audio files
 async function loadAudioFiles() {
@@ -227,22 +260,27 @@ window.audioManager = {
 
 
 function initAudioOnFirstInteraction() {
-    if (window.audioManager) {
-      // Initialize the AudioContext
-      window.audioManager.initAudio();
+  if (window.audioManager) {
+    // Initialize the AudioContext with silent audio workaround
+    const initialized = window.audioManager.initAudio();
+    if (initialized) {
+      console.log('Audio initialized on first interaction');
       // Load all audio files and start background music
       window.audioManager.loadAudioFiles().then(() => {
         console.log('Audio files loaded successfully');
-        // Start background music immediately after loading (optional, adjust as needed)
+        // Start background music immediately after loading
         window.audioManager.playGameMusic();
       }).catch(error => {
         console.error('Failed to load audio files:', error);
       });
+    } else {
+      console.log('AudioContext already initialized or resumed');
     }
-    // Remove both click and touchstart listeners after first interaction
-    document.removeEventListener('click', initAudioOnFirstInteraction);
-    document.removeEventListener('touchstart', initAudioOnFirstInteraction);
   }
+  // Remove both click and touchstart listeners after first interaction
+  document.removeEventListener('click', initAudioOnFirstInteraction);
+  document.removeEventListener('touchstart', initAudioOnFirstInteraction);
+}
   
   // Add listeners for both click (PC) and touchstart (mobile) events
   // Place these outside DOMContentLoaded, near the top of script.js after audioManager definition
@@ -1464,17 +1502,57 @@ document.getElementById('mobileRestartBtn').addEventListener('click', () => {
 });
 
 lockInBtn.addEventListener('click', () => {
+    // Check if audio is currently playing
+    if (lockInBtn.disabled) return; // Prevent clicks while audio is playing
 
-     // Play lockin sound
-     if (window.audioManager && window.audioManager.isAudioReady()) {
-        window.audioManager.playLockin();
+    if (window.audioManager && window.audioManager.isAudioReady()) {
+        // Play lockin sound and get the source node
+        const lockinSource = window.audioManager.playLockin();
+        if (lockinSource) {
+            // Disable button and change to toilet emoji
+            lockInBtn.disabled = true;
+            lockInBtn.textContent = 'locked in?';
+
+            // Get the duration of the lockin audio (in seconds)
+            const lockinDuration = audioBuffers.lockin ? audioBuffers.lockin.duration * 1000 : 1000; // Default to 1s if unknown
+
+            // Re-enable button and revert text after audio finishes
+            lockinSource.onended = () => {
+                lockInBtn.disabled = false;
+                lockInBtn.textContent = 'Lock In'; // Revert to original text
+            };
+
+            // Fallback timeout in case onended fails (e.g., iOS quirks)
+            setTimeout(() => {
+                lockInBtn.disabled = false;
+                lockInBtn.textContent = 'Lock In';
+            }, lockinDuration);
+        }
     } else {
         // Try to initialize audio if not ready
         window.audioManager.initAudio();
-        setTimeout(() => window.audioManager.playLockin(), 100);
+        setTimeout(() => {
+            const lockinSource = window.audioManager.playLockin();
+            if (lockinSource) {
+                lockInBtn.disabled = true;
+                lockInBtn.textContent = 'locked in?';
+
+                const lockinDuration = audioBuffers.lockin ? audioBuffers.lockin.duration * 1000 : 1000;
+
+                lockinSource.onended = () => {
+                    lockInBtn.disabled = false;
+                    lockInBtn.textContent = 'Lock In';
+                };
+
+                setTimeout(() => {
+                    lockInBtn.disabled = false;
+                    lockInBtn.textContent = 'Lock In';
+                }, lockinDuration);
+            }
+        }, 100);
     }
 
-    alert("You're now locked in");
+    
 });
 
 // Handle window resize
@@ -2276,18 +2354,19 @@ const MobileUI = {
             position: 'fixed',
             bottom: '10px',
             left: '10px',
-            padding: '5px 10px',
+            padding: '0px 20px',
             background: 'linear-gradient(180deg, #FF69B4, #FFC1CC)',
             border: '2px solid #FF1493',
             color: '#FFF',
             textShadow: '1px 1px 0px #C71585',
-            fontFamily: "'Chicago', 'Arial', sans-serif",
-            fontSize: '35px',
+            fontFamily: "times new roman",
+            fontWeight: 'bold',
+            fontSize: '45px',
             borderRadius: '5px',
             zIndex: '9999',
             cursor: 'pointer'
         });
-        this.infoButton.textContent = 'ℹ';
+        this.infoButton.textContent = 'i';
         document.body.appendChild(this.infoButton);
 
         // Update content for mobile (optimize for smaller screens)
@@ -2416,14 +2495,16 @@ const baseStyles = `
         display: none;
     }
     #zkMeterContainer {
-        position: absolute;
+        position: fixed;
         bottom: 15px;
         right: 15px;
         display: flex;
         flex-direction: column;
         align-items: flex-end;
         gap: 5px;
-        z-index: 1000;
+        
+        
+        
     }
     #zkLevelLabel {
         font-family: 'Chicago', 'Arial', sans-serif;
