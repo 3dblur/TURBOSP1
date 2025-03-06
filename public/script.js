@@ -1203,7 +1203,7 @@ function spawnObject() {
     const maxObjects = 10;          // Adjusted: Reduced to 6 to further reduce density
     const maxPowerUpPercentage = 0.35; // Cap power-ups at 40% of visible objects
     const minObstaclesBetweenPowerUps = 3; // Require at least 2 obstacles between power-ups
-    const minSpawnCooldown = 120;  // Adjusted: Increased to 0.75s for more spacing
+    const minSpawnCooldown = 350;  // Adjusted: Increased to 0.75s for more spacing
     const maxSpawnCooldown = 1200; // Adjusted: Increased to 2s for more spacing
     
     // Count visible objects
