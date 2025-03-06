@@ -1,3 +1,388 @@
+
+// audioManager.js
+
+// We'll create the AudioContext only when needed
+let audioContext = null;
+
+// Store audio buffers for all sounds
+const audioBuffers = {};
+let gameMusicSource = null;
+let gameMusicGainNode = null;
+let bikeSource = null;
+let bikeGainNode = null;
+
+// One-shot sounds (no looping)
+const oneShotSounds = {
+  gameStart: null,
+  gameOver: null,
+  crash: null,
+  powerUp: null,
+  button: null,
+  quiz: null,    // Added quiz sound
+  yay: null,
+  lockin: null
+};
+
+// Initialize audio system - call this on user interaction (click, touch, button press)
+function initAudio() {
+  if (audioContext === null) {
+    audioContext = new AudioContext();
+    return true;
+  } else if (audioContext.state === 'suspended') {
+    audioContext.resume();
+    return true;
+  }
+  return false;
+}
+
+// Load all audio files
+async function loadAudioFiles() {
+  if (!audioContext) {
+    initAudio();
+  }
+  
+  const audioFiles = {
+    gameMusic: '/music.mp3',
+    bike: '/bikesfx.mp3',
+    gameStart: '/game_start.mp3',
+    gameOver: '/gameover.mp3',
+    crash: '/crash.mp3',
+    powerUp: '/powerup.mp3',
+    button: '/button.mp3',
+    quiz: '/quiz.mp3',    // Added quiz sound
+    yay: '/yay.mp3',
+    lockin: '/lockin.mp3'
+  };
+
+  const loadPromises = Object.entries(audioFiles).map(async ([key, url]) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.error(`Failed to fetch audio file: ${url} - ${response.statusText}`);
+        audioBuffers[key] = null;
+        return;
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      audioBuffers[key] = await audioContext.decodeAudioData(arrayBuffer);
+      console.log(`Successfully loaded audio: ${key}`);
+    } catch (error) {
+      console.error(`Error loading audio file ${url}:`, error);
+      audioBuffers[key] = null;
+    }
+  });
+
+  await Promise.all(loadPromises);
+  return true;
+}
+
+// Create and connect a source node
+function createSource(buffer, loop = false) {
+  if (!audioContext) return { source: null, gainNode: null };
+  
+  const source = audioContext.createBufferSource();
+  source.buffer = buffer;
+  source.loop = loop;
+
+  const gainNode = audioContext.createGain();
+  source.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+
+  return { source, gainNode };
+}
+
+// Crossfade between two looping sources
+function crossfadeTo(newSource, newGainNode, oldSource, oldGainNode, fadeDuration = 0.5) {
+  if (!audioContext) return;
+  
+  if (oldSource) {
+    oldGainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + fadeDuration);
+    setTimeout(() => {
+      try {
+        oldSource.stop();
+      } catch (e) {
+        // Ignore errors if source is already stopped
+      }
+    }, fadeDuration * 1000);
+  }
+  
+  newSource.start(0);
+  newGainNode.gain.setValueAtTime(0, audioContext.currentTime);
+  newGainNode.gain.linearRampToValueAtTime(0.7, audioContext.currentTime + fadeDuration);
+}
+
+// Play game music with crossfade
+function playGameMusic() {
+  if (!audioContext || !audioBuffers.gameMusic) return;
+  
+  const { source, gainNode } = createSource(audioBuffers.gameMusic, true);
+  if (!source) return;
+
+  gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+  
+  crossfadeTo(source, gainNode, gameMusicSource, gameMusicGainNode);
+  gameMusicSource = source;
+  gameMusicGainNode = gainNode;
+}
+
+// Stop game music with fade out
+function stopGameMusic(fadeDuration = 0.5) {
+  if (!audioContext || !gameMusicSource) return;
+  
+  gameMusicGainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + fadeDuration);
+  setTimeout(() => {
+    try {
+      gameMusicSource.stop();
+    } catch (e) {
+      // Ignore errors if source is already stopped
+    }
+    gameMusicSource = null;
+    gameMusicGainNode = null;
+  }, fadeDuration * 1000);
+}
+
+// Play bike sound with pitch shifting
+function playBikeSound() {
+  if (!audioContext || !audioBuffers.bike) return;
+  
+  const { source, gainNode } = createSource(audioBuffers.bike, true);
+  if (!source) return;
+  
+  crossfadeTo(source, gainNode, bikeSource, bikeGainNode);
+  bikeSource = source;
+  bikeGainNode = gainNode;
+}
+
+function updateBikePitch(speed) {
+  if (!audioContext || !bikeSource) return;
+  
+  const pitchTier = getPitchTier(speed);
+  bikeSource.playbackRate.linearRampToValueAtTime(pitchTier, audioContext.currentTime + 0.2);
+}
+
+function getPitchTier(speed) {
+  const basePitch = 1.0;
+  if (speed < 0.6) return basePitch;
+  if (speed < 1.0) return basePitch * 1.5;
+  return basePitch * 2.0;
+}
+
+function stopBikeSound(fadeDuration = 0.5) {
+  if (!audioContext || !bikeSource) return;
+  
+  bikeGainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + fadeDuration);
+  setTimeout(() => {
+    try {
+      bikeSource.stop();
+    } catch (e) {
+      // Ignore errors if source is already stopped
+    }
+    bikeSource = null;
+    bikeGainNode = null;
+  }, fadeDuration * 1000);
+}
+
+// Play one-shot sounds
+function playOneShot(soundKey) {
+  if (!audioContext || !audioBuffers[soundKey]) return null;
+  
+  const { source, gainNode } = createSource(audioBuffers[soundKey], false);
+  if (!source) return null;
+  
+  gainNode.gain.value = 0.7;
+  source.start(0);
+  return source;
+}
+
+// Check if audio is initialized and ready
+function isAudioReady() {
+  return audioContext !== null && audioContext.state === 'running';
+}
+
+// Attach audioManager to the global window object
+window.audioManager = {
+  initAudio,
+  loadAudioFiles,
+  playGameMusic,
+  stopGameMusic,
+  playBikeSound,
+  updateBikePitch,
+  stopBikeSound,
+  playGameStart: () => playOneShot('gameStart'),
+  playGameOver: () => playOneShot('gameOver'),
+  playCrash: () => playOneShot('crash'),
+  playPowerUp: () => playOneShot('powerUp'),
+  playButton: () => playOneShot('button'),
+  playQuiz: () => playOneShot('quiz'),    // Added quiz sound player
+  playYay: () => playOneShot('yay'),
+  playLockin: () => playOneShot('lockin'),
+  resumeContext: () => {
+    if (audioContext && audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+  },
+  isAudioReady,
+};
+
+
+
+
+// Test audio: Load audio files and play button sound on startGameBtn click
+// Test audio: Load audio files and play button sound on lockInBtn click
+
+
+// Add this to your script.js file right after your existing audio initialization code
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize audio on first interaction (you already have this)
+    document.addEventListener('click', function initAudioOnFirstInteraction() {
+      if (window.audioManager) {
+        window.audioManager.initAudio();
+        window.audioManager.loadAudioFiles().then(() => {
+          console.log('Audio files loaded successfully');
+        }).catch(error => {
+          console.error('Failed to load audio files:', error);
+        });
+        console.log('Audio initialized on first interaction');
+      }
+      document.removeEventListener('click', initAudioOnFirstInteraction);
+    }, { once: true });
+    
+    // Global audio functions for your game
+    window.gameAudio = {
+      // Game state audio
+      startGame: function() {
+        if (window.audioManager && window.audioManager.isAudioReady()) {
+          window.audioManager.playGameStart();
+          setTimeout(() => {
+            window.audioManager.playGameMusic();
+          }, 1000); // Start music after intro sound
+        }
+      },
+      
+      endGame: function() {
+        if (window.audioManager && window.audioManager.isAudioReady()) {
+          window.audioManager.playGameOver();
+          window.audioManager.stopGameMusic(1.0);
+          window.audioManager.stopBikeSound(0.5);
+        }
+      },
+      
+      // Bike sounds
+      startBike: function() {
+        if (window.audioManager && window.audioManager.isAudioReady()) {
+          window.audioManager.playBikeSound();
+        }
+      },
+      
+      updateBikeSpeed: function(speed) {
+        if (window.audioManager && window.audioManager.isAudioReady()) {
+          window.audioManager.updateBikePitch(speed);
+        }
+      },
+      
+      stopBike: function() {
+        if (window.audioManager && window.audioManager.isAudioReady()) {
+          window.audioManager.stopBikeSound(0.5);
+        }
+      },
+      
+      // Event sounds
+      playCrash: function() {
+        if (window.audioManager && window.audioManager.isAudioReady()) {
+          window.audioManager.playCrash();
+        }
+      },
+      
+      playPowerUp: function() {
+        if (window.audioManager && window.audioManager.isAudioReady()) {
+          window.audioManager.playPowerUp();
+        }
+      },
+      
+      playButton: function() {
+        if (window.audioManager && window.audioManager.isAudioReady()) {
+          window.audioManager.playButton();
+        }
+      }
+    };
+    
+    // Button click handler (you already have something similar)
+    document.addEventListener('click', function(event) {
+      // Check if the clicked element is a button
+      if (event.target.tagName === 'BUTTON') {
+        console.log('Button clicked:', event.target.id);
+        
+        // Play button sound
+        window.gameAudio.playButton();
+        
+        // Handle specific buttons
+        if (event.target.id === 'startGameBtn') {
+          window.gameAudio.startGame();
+        }
+      }
+    });
+  });
+  
+  // Example integration with your game mechanics
+  // Add these calls at the appropriate places in your game code:
+  
+  /*
+  // When starting a new game
+  function startNewGame() {
+    // Your existing game start code
+    // ...
+    
+    // Play start game audio
+    window.gameAudio.startGame();
+  }
+  
+  // When game ends
+  function gameOver() {
+    // Your existing game over code
+    // ...
+    
+    // Play game over audio
+    window.gameAudio.endGame();
+  }
+  
+  // When player starts moving
+  function startMoving() {
+    // Your existing code
+    // ...
+    
+    // Start bike sound
+    window.gameAudio.startBike();
+  }
+  
+  // When player speed changes
+  function updateSpeed(speed) {
+    // Your existing code
+    // ...
+    
+    // Update bike pitch based on speed
+    window.gameAudio.updateBikeSpeed(speed);
+  }
+  
+  // When player crashes
+  function playerCrash() {
+    // Your existing code
+    // ...
+    
+    // Play crash sound
+    window.gameAudio.playCrash();
+  }
+  
+  // When player gets a power-up
+  function collectPowerUp() {
+    // Your existing code
+    // ...
+    
+    // Play power-up sound
+    window.gameAudio.playPowerUp();
+  }
+  */
+
+// Add this to your script.js
+
 // Array of fun facts about zk proofs (beginner-friendly)
 const zkProofFunFacts = [
     "Zk proofs let you prove something is true without revealing why—like showing you know a secret password without saying it!",
@@ -152,6 +537,7 @@ zkMeterContainer.appendChild(zkLevelLabel); // Add level label first
 zkMeterContainer.appendChild(zkMeterBarContainer); // Then the meter
 document.body.appendChild(zkMeterContainer);
 
+/*
 const backgroundAudio = document.createElement('audio');
 backgroundAudio.id = 'backgroundAudio';
 backgroundAudio.src = '/audio.mp3';
@@ -174,7 +560,7 @@ backgroundAudio.play().then(() => {
         }
     }, { once: true });
 });
-
+*/
 
 // Zk Fun Fact Notification
 const zkFactNotification = document.createElement('div');
@@ -817,6 +1203,10 @@ window.addEventListener('keydown', (e) => {
 });
 // Update the animation loop to move objects towards the player
 
+// Load audio files at startup
+
+
+
 
 function animate() {
     if (state.gameOver) return;
@@ -870,6 +1260,9 @@ function animate() {
                 
                 const fillPercentage = (powerUpsForNextMilestone / powerUpThreshold) * 100;
                 zkMeterFill.style.width = `${Math.min(fillPercentage, 100)}%`;
+                
+                // Play power-up sound
+                audioManager.playPowerUp();
                 
                 if (powerUpsForNextMilestone >= powerUpThreshold) {
                     // Update ZK Level and reset meter
@@ -965,6 +1358,13 @@ function gameOver() {
     
     console.log('Game over - username:', state.username);
     
+    // Stop looping sounds with fade out
+    audioManager.stopGameMusic(1);
+    audioManager.stopBikeSound(0.8);
+    
+    // Play crash sound immediately when game over occurs
+    audioManager.playCrash();
+    
     // Close other dialogs
     garage.style.display = 'none';
     leaderboard.style.display = 'none';
@@ -981,6 +1381,15 @@ function gameOver() {
         setTimeout(() => {
             gameOverScreen.style.opacity = '1';
             gameOverScreen.style.transform = 'translate(-50%, -50%) scale(1)';
+            
+            // Make sure audio context is ready before playing sound
+            if (audioManager.isAudioReady()) {
+                audioManager.playGameOver(); // Play game over sound when dialog appears
+            } else {
+                // Try to initialize audio if not ready
+                audioManager.initAudio();
+                setTimeout(() => audioManager.playGameOver(), 100);
+            }
         }, 50);
         
         // Save score without quiz bonus
@@ -1026,7 +1435,20 @@ document.getElementById('mobileRestartBtn').addEventListener('click', () => {
 });
 
 lockInBtn.addEventListener('click', () => {
+
+     // Play lockin sound
+     if (window.audioManager && window.audioManager.isAudioReady()) {
+        window.audioManager.playLockin();
+    } else {
+        // Try to initialize audio if not ready
+        window.audioManager.initAudio();
+        setTimeout(() => window.audioManager.playLockin(), 100);
+    }
+
     alert("You're now locked in");
+
+   
+
 });
 
 // Handle window resize
@@ -1181,6 +1603,7 @@ function updateGameSpeed() {
     if (state.speed > state.maxSpeed) {
         state.speed = state.maxSpeed;
     }
+    audioManager.updateBikePitch(state.speed); // Update bike pitch based on speed
 }
 
 // Update camera initial position
@@ -1197,14 +1620,14 @@ let lastSpawnTime = 0;
 function spawnObject() {
     // Constants for visibility and density
     const baseSpawnZ = -100;       // Base spawn point
-    const maxSpawnZOffset = -170;  // Adjusted: Extended to -200 for more spacing
+    const maxSpawnZOffset = -200;  // Adjusted: Extended to -200 for more spacing
     const despawnZ = 10;           // Despawn point
     const minObjects = 6;          // Minimum objects to keep road active
-    const maxObjects = 10;          // Adjusted: Reduced to 6 to further reduce density
+    const maxObjects = 12;          // Adjusted: Reduced to 6 to further reduce density
     const maxPowerUpPercentage = 0.35; // Cap power-ups at 40% of visible objects
     const minObstaclesBetweenPowerUps = 3; // Require at least 2 obstacles between power-ups
-    const minSpawnCooldown = 350;  // Adjusted: Increased to 0.75s for more spacing
-    const maxSpawnCooldown = 1200; // Adjusted: Increased to 2s for more spacing
+    const minSpawnCooldown = 130;  // Adjusted: Increased to 0.75s for more spacing
+    const maxSpawnCooldown = 600; // Adjusted: Increased to 2s for more spacing
     
     // Count visible objects
     const visibleObjects = objects.filter(obj => obj.z < despawnZ && obj.z > maxSpawnZOffset);
@@ -1323,7 +1746,7 @@ function spawnObject() {
 
         // Handle adjacent obstacles (max 2 lanes, scales with zkLevel)
         if (type === 'obstacle' && state.powerUpsCollected >= state.adjacentObstacleThreshold) {
-            const adjacentChance = Math.min(0.13 + (zkLevel * 0.05), 0.4); // 10% at L1, up to 50% at L9+
+            const adjacentChance = Math.min(0.1 + (zkLevel * 0.05), 0.2); // 10% at L1, up to 50% at L9+
             if (Math.random() < adjacentChance && availableLanes.length > 1) {
                 const remainingLanes = availableLanes.filter(lane => lane !== lanePosition);
                 const adjacentLane = remainingLanes[Math.floor(Math.random() * remainingLanes.length)];
@@ -1459,6 +1882,14 @@ function showZkQuiz() {
     setTimeout(() => {
         zkQuizDialog.style.opacity = '1';
         zkQuizDialog.style.transform = 'translate(-50%, -50%) scale(1)';
+        // Play quiz sound when dialog appears
+        if (window.audioManager && window.audioManager.isAudioReady()) {
+            window.audioManager.playQuiz();
+        } else {
+            // Try to initialize audio if not ready
+            window.audioManager.initAudio();
+            setTimeout(() => window.audioManager.playQuiz(), 100);
+        }
     }, 50);
 }
 
@@ -1534,6 +1965,11 @@ function handleAnswer(selectedAnswer, correctAnswer) {
         zkQuizDialog.innerHTML += `
             <p style="font-size: 16px; color: #FFFF00; text-shadow: 1px 1px 0px #C71585; margin: 10px 0;">Correct! +5 Points</p>
         `;
+        
+        // Play yay sound for correct answer
+        if (window.audioManager && window.audioManager.isAudioReady()) {
+            window.audioManager.playYay();
+        }
     } else {
         zkQuizDialog.innerHTML += `
             <p style="font-size: 16px; color: #FF4040; text-shadow: 1px 1px 0px #C71585; margin: 10px 0;">Incorrect. The correct answer was: ${correctAnswer}</p>
@@ -1642,6 +2078,14 @@ function startGame() {
     
     // Hide game over screen
     gameOverScreen.style.display = 'none';
+
+    // Start audio
+    
+    audioManager.playGameMusic(); // Stop any existing music
+    audioManager.stopBikeSound(); // Stop any existing bike sound
+    audioManager.playGameStart(); // Play game start sound
+    audioManager.playGameMusic(); // Start game music with crossfade
+    audioManager.playBikeSound(0.5); // Start bike sound with crossfade
     
     // Start animation loop
     animate();
