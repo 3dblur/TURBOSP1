@@ -219,10 +219,12 @@
 }
 
 /* Show only on mobile */
-@media (max-width: 768px) {
+@media (max-width: 3008px) {
     #mobileRestartBtn {
         display: inline-block; /* Matches other buttons */
     }
+}
+    @media (max-width: 768px) {
     #gameOverScreen .button-container {
         flex-wrap: wrap; /* Allows buttons to wrap on small screens */
         gap: 10px; /* Adjust gap for mobile */

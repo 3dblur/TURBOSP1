@@ -14,6 +14,7 @@ let gameMusicSource = null;
 let gameMusicGainNode = null;
 let bikeSource = null;
 let bikeGainNode = null;
+let shieldSource = null;
 
 // Silent buffer for iOS silent mode workaround
 function createSilentBuffer(context) {
@@ -33,7 +34,8 @@ const oneShotSounds = {
   button: null,
   quiz: null,    // Added quiz sound
   yay: null,
-  lockin: null
+  lockin: null,
+  shield: null
 };
 
 // Initialize audio system - call this on user interaction (click, touch, button press)
@@ -84,7 +86,8 @@ async function loadAudioFiles() {
     button: '/button.mp3',
     quiz: '/quiz.mp3',    // Added quiz sound
     yay: '/yay.mp3',
-    lockin: '/lockin.mp3'
+    lockin: '/lockin.mp3',
+    shield: '/shield.mp3'
   };
 
   const loadPromises = Object.entries(audioFiles).map(async ([key, url]) => {
@@ -231,6 +234,25 @@ function isAudioReady() {
   return audioContext !== null && audioContext.state === 'running';
 }
 
+// Play shield sound and track source
+function playShield() {
+    shieldSource = playOneShot('shield');
+    return shieldSource; // Return for tracking if needed
+  }
+  
+  // Stop shield sound immediately
+  function stopShield() {
+    if (shieldSource) {
+      try {
+        shieldSource.stop();
+        console.log('Shield sound stopped');
+      } catch (e) {
+        // Ignore if already stopped
+      }
+      shieldSource = null;
+    }
+  }
+
 // Attach audioManager to the global window object
 window.audioManager = {
   initAudio,
@@ -240,6 +262,8 @@ window.audioManager = {
   playBikeSound,
   updateBikePitch,
   stopBikeSound,
+  playShield,  // Updated to track source
+  stopShield,
   playGameStart: () => playOneShot('gameStart'),
   playGameOver: () => playOneShot('gameOver'),
   playCrash: () => playOneShot('crash'),
@@ -321,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
           window.audioManager.playGameStart();
           setTimeout(() => {
             window.audioManager.playGameMusic();
-          }, 1000); // Start music after intro sound
+          }, 300); // Start music after intro sound
         }
       },
       
@@ -452,16 +476,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Array of fun facts about zk proofs (beginner-friendly)
 const zkProofFunFacts = [
-    "Zk proofs let you prove something is true without revealing why—like showing you know a secret password without saying it!",
-    "Zk proofs are used in cryptocurrencies like Zcash to keep your transactions private while proving they’re valid!",
-    "The 'zk' in zk proofs stands for 'zero-knowledge'—you share zero info about the secret, yet prove you know it!",
-    "Zk proofs were invented in the 1980s by researchers who wanted to solve trust issues in computing—pretty cool, right?",
-    "With zk proofs, you can prove you’re over 18 without showing your exact age—just that you meet the requirement!",
-    "Zk proofs can make voting systems secure by proving your vote was counted without revealing who you voted for!",
-    "Zk proofs are like magic: you can prove you solved a puzzle without showing the solution—amazing for privacy!",
-    "In blockchain, zk proofs help make transactions faster and cheaper by compressing data—less clutter, more speed!",
-    "Zk proofs can be used in gaming to prove you didn’t cheat, without revealing your strategy—fair play guaranteed!",
-    "The math behind zk proofs involves cool concepts like cryptography and number theory—want to learn more?"
+   "Zk proofs are like a superhero’s secret identity—you prove you’ve got the powers without unmasking yourself!",
+    "In the future, zk proofs could let you prove you own a rare digital collectible without flashing it to the world!",
+    "Zk proofs turn math into a ninja skill—hiding secrets while still showing off your smarts!",
+    "Ever heard of zk-SNARKs? They’re bite-sized zk proofs that pack a privacy punch in tiny packages!",
+    "Zk proofs could let you ace a test without showing your answers—just proving you nailed it!",
+    "Imagine buying a movie ticket online with zk proofs—proof you paid, but no one knows it’s for *Barbie*!",
+    "Zk proofs are so sneaky, they could’ve helped pirates prove their treasure map was real without sharing the X!",
+    "With zk proofs, you could prove you’re a VIP at a club without spilling your name—total rockstar move!",
+    "Zk proofs mix math and mischief—think of it as a secret handshake for computers!",
+    "One day, zk proofs might let your car prove it’s paid for parking without revealing where you parked!"
 ];
 
 // Track which fun fact to show next
@@ -470,29 +494,29 @@ let currentZkFactIndex = 0;
 // Quiz questions based on zk proof fun facts
 const zkQuizQuestions = [
     {
-        question: "What does 'zk' in zk proofs stand for?",
-        options: ["Zero-Knowledge", "Zigzag-Knowledge", "Zip-Knowledge"],
-        correctAnswer: "Zero-Knowledge"
+        question: "What could zk proofs help you prove about a digital collectible?",
+        options: ["That it’s rare", "That you own it", "That it’s shiny"],
+        correctAnswer: "That you own it"
     },
     {
-        question: "What can zk proofs help prove without revealing?",
-        options: ["Your exact age", "Your favorite color", "Your exact location"],
-        correctAnswer: "Your exact age"
+        question: "What’s a zk-SNARK?",
+        options: ["A type of shark", "A compact zk proof", "A secret code"],
+        correctAnswer: "A compact zk proof"
     },
     {
-        question: "Which cryptocurrency uses zk proofs for private transactions?",
-        options: ["Bitcoin", "Zcash", "Ethereum"],
-        correctAnswer: "Zcash"
+        question: "What could zk proofs hide when buying a movie ticket?",
+        options: ["The movie title", "The theater location", "The ticket price"],
+        correctAnswer: "The movie title"
     },
     {
-        question: "What decade were zk proofs invented in?",
-        options: ["1990s", "1980s", "2000s"],
-        correctAnswer: "1980s"
+        question: "What pirate treasure detail could zk proofs prove without revealing?",
+        options: ["The treasure’s weight", "The map’s location", "The ship’s name"],
+        correctAnswer: "The map’s location"
     },
     {
-        question: "What can zk proofs help with in voting systems?",
-        options: ["Proving your vote was counted", "Revealing who you voted for", "Counting votes faster"],
-        correctAnswer: "Proving your vote was counted"
+        question: "What VIP perk could zk proofs give you at a club?",
+        options: ["Proving you’re on the list", "Showing off your dance moves", "Getting free drinks"],
+        correctAnswer: "Proving you’re on the list"
     }
 ];
 
@@ -1428,6 +1452,7 @@ function gameOver() {
     // Stop looping sounds with fade out
     audioManager.stopGameMusic(1);
     audioManager.stopBikeSound(0.8);
+    audioManager.stopShield();
     
     // Play crash sound immediately when game over occurs
     audioManager.playCrash();
@@ -1907,59 +1932,63 @@ function showZkFunFact() {
 // Apply a temporary Zk bonus (e.g., invincibility)
 // Apply a temporary Zk bonus (e.g., invincibility)
 function applyZkBonus() {
-    // Make the bike invincible for 5 seconds
     bike.isInvincible = true;
-
-    // Add a visible invincibility shield (sphere)
-    const shieldGeometry = new THREE.SphereGeometry(2, 16, 16); // Radius of 2 units
+  
+    const shieldGeometry = new THREE.SphereGeometry(2, 16, 16);
     const shieldMaterial = new THREE.MeshBasicMaterial({
-        color: 0xFFFF00, // Yellow shield
-        transparent: true,
-        opacity: 0.3, // Semi-transparent
-        side: THREE.DoubleSide
+      color: 0xFFFF00,
+      transparent: true,
+      opacity: 0.3,
+      side: THREE.DoubleSide
     });
     const shield = new THREE.Mesh(shieldGeometry, shieldMaterial);
-    shield.name = 'invincibilityShield'; // Name for easy identification
-    
-    // Add shield to the bike (so it moves with the bike)
+    shield.name = 'invincibilityShield';
     bike.add(shield);
-    
-    // Glow effect on the bike
+  
     bike.children.forEach(child => {
-        if (child.material && child.name !== 'invincibilityShield') { // Exclude the shield from glowing
-            child.material.emissive.set(0xFFFF00);
-            child.material.emissiveIntensity = 0.5;
-        }
+      if (child.material && child.name !== 'invincibilityShield') {
+        child.material.emissive.set(0xFFFF00);
+        child.material.emissiveIntensity = 0.5;
+      }
     });
-    
-    // Show a notification
-    speedNotification.textContent = '🚀 Zk Bonus: Invincibility for 5 seconds!';
+  
+    speedNotification.textContent = '🚀 Zk Bonus: Invincibility for 5 seconds!'; // Updated text
     speedNotification.style.display = 'block';
     setTimeout(() => {
-        speedNotification.style.display = 'none';
+      speedNotification.style.display = 'none';
     }, 3000);
-    
-    // Revert after 5 seconds
+  
+    if (window.audioManager) {
+      if (window.audioManager.isAudioReady()) {
+        window.audioManager.playShield();
+      } else {
+        window.audioManager.initAudio();
+        setTimeout(() => window.audioManager.playShield(), 100);
+      }
+    }
+  
     setTimeout(() => {
-        bike.isInvincible = false;
-        
-        // Remove the shield from the bike and scene
-        const shieldMesh = bike.getObjectByName('invincibilityShield');
-        if (shieldMesh) {
-            bike.remove(shieldMesh);
-            shieldMesh.geometry.dispose();
-            shieldMesh.material.dispose();
+      bike.isInvincible = false;
+  
+      const shieldMesh = bike.getObjectByName('invincibilityShield');
+      if (shieldMesh) {
+        bike.remove(shieldMesh);
+        shieldMesh.geometry.dispose();
+        shieldMesh.material.dispose();
+      }
+  
+      bike.children.forEach(child => {
+        if (child.material && child.name !== 'invincibilityShield') {
+          child.material.emissive.set(0x000000);
+          child.material.emissiveIntensity = 0;
         }
-        
-        // Remove glow effect from the bike
-        bike.children.forEach(child => {
-            if (child.material && child.name !== 'invincibilityShield') {
-                child.material.emissive.set(0x000000);
-                child.material.emissiveIntensity = 0;
-            }
-        });
-    }, 5000);
-}
+      });
+  
+      if (window.audioManager) {
+        window.audioManager.stopShield(); // Stop shield sound when shield ends
+      }
+    }, 5000); // 5 seconds
+  }
 // Fix for the game start sequence
 // Quiz state
 let currentQuestionIndex = 0;
@@ -2143,57 +2172,83 @@ function startGame() {
     state.speedMultiplier = 1;
     state.speed = state.baseSpeed;
     scoreDisplay.textContent = state.score;
-    
+  
     // Reset power-up milestone trackers
     powerUpThreshold = 3;
     powerUpsForNextMilestone = 0;
-    zkLevel = 1; // Reset ZK Level to L1
-    zkLevelLabel.textContent = 'L1'; // Reset label
-    
+    zkLevel = 1;
+    zkLevelLabel.textContent = 'L1';
+  
     // Reset bike state
     bike.position.set(0, 0.3, 0);
     bike.isInvincible = false;
-    
+  
     // Remove any existing invincibility shield
     const shieldMesh = bike.getObjectByName('invincibilityShield');
     if (shieldMesh) {
-        bike.remove(shieldMesh);
-        shieldMesh.geometry.dispose();
-        shieldMesh.material.dispose();
+      bike.remove(shieldMesh);
+      shieldMesh.geometry.dispose();
+      shieldMesh.material.dispose();
     }
-    
+  
     // Reset glow effect on the bike
     bike.children.forEach(child => {
-        if (child.material) {
-            child.material.emissive.set(0x000000);
-            child.material.emissiveIntensity = 0;
-        }
+      if (child.material) {
+        child.material.emissive.set(0x000000);
+        child.material.emissiveIntensity = 0;
+      }
     });
-    
+  
     // Reset Zk Knowledge Meter
     zkMeterFill.style.width = '0%';
-    
-    // Clear any existing objects
+  
+    // Clear existing objects
     objects.forEach(obj => scene.remove(obj.mesh));
     objects.length = 0;
-
+  
     lastSpawnedType = null;
     obstaclesSinceLastPowerUp = 0;
-    
+  
     // Hide game over screen
     gameOverScreen.style.display = 'none';
-
-    // Start audio
-    
-    audioManager.playGameMusic(); // Stop any existing music
-    audioManager.stopBikeSound(); // Stop any existing bike sound
-    audioManager.playGameStart(); // Play game start sound
-    audioManager.playGameMusic(); // Start game music with crossfade
-    audioManager.playBikeSound(0.5); // Start bike sound with crossfade
-    
+  
+    // Start audio sequence
+    if (window.audioManager) {
+      // Ensure AudioContext is resumed
+      if (!window.audioManager.isAudioReady()) {
+        window.audioManager.initAudio();
+      }
+  
+      // Stop any existing sounds cleanly
+      window.audioManager.stopGameMusic(0); // Immediate stop to avoid overlap
+      window.audioManager.stopBikeSound(0);
+  
+      // Play game start sound, then game music
+      const gameStartSource = window.audioManager.playGameStart();
+      if (gameStartSource) {
+        gameStartSource.onended = () => {
+          // Only play game music after gameStart finishes and audio files are loaded
+          window.audioManager.loadAudioFiles().then(() => {
+            window.audioManager.playGameMusic();
+            window.audioManager.playBikeSound();
+          }).catch(error => {
+            console.error('Audio files not loaded yet:', error);
+          });
+        };
+      } else {
+        // Fallback: If gameStart fails or isn’t available, proceed immediately
+        window.audioManager.loadAudioFiles().then(() => {
+          window.audioManager.playGameMusic();
+          window.audioManager.playBikeSound();
+        }).catch(error => {
+          console.error('Audio files not loaded yet:', error);
+        });
+      }
+    }
+  
     // Start animation loop
     animate();
-}
+  }
 
 // Update the start game button event listener
 document.getElementById('startGameBtn').addEventListener('click', () => {
