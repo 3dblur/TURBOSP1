@@ -779,7 +779,7 @@ const objects = [];
 
 // Game State
 const state = {
-    speed: 0.3,
+    speed: 0.4,
     maxSpeed: 1.2,
     acceleration: 0.0002,
     bikeLane: 1,  // 0, 1, 2 for left, middle, right
@@ -793,7 +793,7 @@ const state = {
     zkPowerUpsForFact: 0,
     baseSpeed: 0.5,
     speedMultiplier: 1,
-    obstacleCount: 0,  // Track obstacles for power-up spawning
+    //obstacleCount: 0,  // Track obstacles for power-up spawning
     adjacentObstacleThreshold: 4,  // Minimum power-ups needed before adjacent obstacles can appear
     username: '',
 };
@@ -884,7 +884,7 @@ function animate() {
                 }
                 
                 if (state.powerUpsCollected % 10 === 0) {
-                    state.speedMultiplier += 0.5;
+                    state.speedMultiplier += 0.35;
                     updateGameSpeed();
                     showSpeedNotification(state.speedMultiplier);
                 }
@@ -1188,39 +1188,115 @@ camera.position.set(0, 8, 15);
 camera.lookAt(0, 0, -5);
 
 // Update the spawnObject function to adjust positions and sizes
+// Track the last spawned object type and obstacles since last power-up
+// Track the last spawned object type, obstacles since last power-up, and last spawn time
+let lastSpawnedType = null;
+let obstaclesSinceLastPowerUp = 0;
+let lastSpawnTime = 0;
+
 function spawnObject() {
-    if (Math.random() < 0.02) {
-        const shouldSpawnPowerUp = state.obstacleCount >= 2;
-        const type = shouldSpawnPowerUp ? 'powerUp' : 'obstacle';
+    // Constants for visibility and density
+    const baseSpawnZ = -100;       // Base spawn point
+    const maxSpawnZOffset = -170;  // Adjusted: Extended to -200 for more spacing
+    const despawnZ = 10;           // Despawn point
+    const minObjects = 6;          // Minimum objects to keep road active
+    const maxObjects = 10;          // Adjusted: Reduced to 6 to further reduce density
+    const maxPowerUpPercentage = 0.35; // Cap power-ups at 40% of visible objects
+    const minObstaclesBetweenPowerUps = 3; // Require at least 2 obstacles between power-ups
+    const minSpawnCooldown = 120;  // Adjusted: Increased to 0.75s for more spacing
+    const maxSpawnCooldown = 1200; // Adjusted: Increased to 2s for more spacing
+    
+    // Count visible objects
+    const visibleObjects = objects.filter(obj => obj.z < despawnZ && obj.z > maxSpawnZOffset);
+    const visiblePowerUps = visibleObjects.filter(obj => obj.type === 'powerUp').length;
+    const visibleObstacles = visibleObjects.filter(obj => obj.type === 'obstacle').length;
+
+    // Calculate current power-up percentage
+    const powerUpPercentage = visibleObjects.length > 0 ? visiblePowerUps / visibleObjects.length : 0;
+
+    // Base spawn probability, increased if road is sparse
+    const baseSpawnChance = visibleObjects.length < minObjects ? 0.2 : 0.07; // Adjusted: Reduced to 4% (20% if sparse)
+
+    // Check spawn cooldown
+    const currentTime = performance.now();
+    const timeSinceLastSpawn = currentTime - lastSpawnTime;
+    const spawnCooldown = minSpawnCooldown + Math.random() * (maxSpawnCooldown - minSpawnCooldown); // Random cooldown between 0.75-2s
+
+    if (Math.random() < baseSpawnChance && timeSinceLastSpawn >= spawnCooldown) {
+        // Cap total objects
+        if (objects.length >= maxObjects) return;
+
+        // Check occupied lanes at spawn point to avoid overlap
+        const spawnZRangeMin = baseSpawnZ;
+        const spawnZRangeMax = maxSpawnZOffset;
+        const occupiedLanesByZ = new Map(); // Map z-position to occupied lanes
+        objects.forEach(obj => {
+            const z = obj.z;
+            if (z >= spawnZRangeMax && z <= spawnZRangeMin) {
+                const zKey = Math.round(z / 10) * 10; // Group by 10-unit intervals
+                if (!occupiedLanesByZ.has(zKey)) {
+                    occupiedLanesByZ.set(zKey, new Set());
+                }
+                occupiedLanesByZ.get(zKey).add(obj.mesh.position.x);
+            }
+        });
+
+        // Choose a random z-position for spawning
+        const zRange = Math.abs(spawnZRangeMax - spawnZRangeMin);
+        const speedFactor = Math.min(state.speedMultiplier, 2); // Cap speed factor at 2x
+        const adjustedZRange = zRange / speedFactor; // Reduce range at higher speeds
+        const spawnZ = baseSpawnZ - (Math.random() * adjustedZRange); // Random z between baseSpawnZ and adjusted max
+        const zKey = Math.round(spawnZ / 10) * 10;
+        const occupiedLanes = occupiedLanesByZ.get(zKey) || new Set();
+        const availableLanes = state.lanePositions.filter(lane => !occupiedLanes.has(lane));
+
+        // Skip if all lanes are occupied at the chosen z-position
+        if (availableLanes.length === 0) return;
+
+        // Base power-up chance (decreases with zkLevel)
+        let powerUpChance = Math.max(0.3 - (zkLevel * 0.03), 0.15); // 30% at L1, down to 15% at L6+
+
+        // Adjust power-up chance based on ZK Meter progress (increase if close to filling)
         
-        if (shouldSpawnPowerUp) {
-            state.obstacleCount = 0;
-        } else {
-            state.obstacleCount++;
+
+        // Adjust power-up chance based on cap and consecutive power-up rule
+        if (powerUpPercentage >= maxPowerUpPercentage) {
+            powerUpChance = 0.01; // Force-spawn obstacles if power-up cap is reached
+        } else if (visiblePowerUps === 0) {
+            powerUpChance = 0.8; // Force-spawn a power-up if none are visible
+        } else if (lastSpawnedType === 'powerUp' && obstaclesSinceLastPowerUp < minObstaclesBetweenPowerUps) {
+            powerUpChance = 0; // Force-spawn an obstacle if we need more obstacles before the next power-up
         }
 
-        const spawnAdjacent = type === 'obstacle' && 
-                             state.powerUpsCollected >= state.adjacentObstacleThreshold && 
-                             Math.random() < 0.3;
+        // Decide type
+        const shouldSpawnPowerUp = Math.random() < powerUpChance;
+        const type = shouldSpawnPowerUp ? 'powerUp' : 'obstacle';
 
-        const lanePosition = state.lanePositions[Math.floor(Math.random() * 3)];
+        // Update tracking for consecutive power-ups and spawn time
+        if (type === 'powerUp') {
+            lastSpawnedType = 'powerUp';
+            obstaclesSinceLastPowerUp = 0;
+        } else {
+            lastSpawnedType = 'obstacle';
+            obstaclesSinceLastPowerUp++;
+        }
+        lastSpawnTime = currentTime;
+
+        // Choose a random available lane
+        const lanePosition = availableLanes[Math.floor(Math.random() * availableLanes.length)];
         
+        // Spawn the object
         let mesh;
-        
         if (type === 'obstacle') {
-            // Create larger obstacle (2x thicker, 1.5x longer)
-            const geometry = new THREE.BoxGeometry(1.5, 0.6, 0.6); // Increased height and depth
+            const geometry = new THREE.BoxGeometry(1.5, 0.6, 0.6);
             const material = new THREE.MeshPhongMaterial({ 
                 color: 0xff6600,
                 shininess: 30
             });
             mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(lanePosition, 0.3, -100); // Adjusted height for obstacles
+            mesh.position.set(lanePosition, 0.3, spawnZ);
         } else {
-            // Create SP1 power-up
             const geometry = new THREE.BoxGeometry(1.6, 1.6, 1.6);
-            
-            // Create materials for each face with the SP1 texture
             const materials = [];
             for (let i = 0; i < 6; i++) {
                 materials.push(new THREE.MeshPhongMaterial({
@@ -1230,56 +1306,47 @@ function spawnObject() {
                     shininess: 50
                 }));
             }
-            
             mesh = new THREE.Mesh(geometry, materials);
-            
-            // Position the SP1 block to float above the ground
-            mesh.position.set(lanePosition, 1.0, -100); // Raised position
-            
-            // Adjust rotation to make SP1 text more visible
-            mesh.rotation.x = 0; // No x rotation to keep it flat
-            mesh.rotation.y = Math.PI / 4; // Rotate slightly for visibility
+            mesh.position.set(lanePosition, 1.0, spawnZ);
+            mesh.rotation.x = 0;
+            mesh.rotation.y = Math.PI / 4;
         }
         
         const object = {
             mesh: mesh,
             type: type,
-            z: -100,
+            z: spawnZ,
             rotationSpeed: type === 'powerUp' ? 0.02 : 0
         };
-        
-        // Don't set position here since we already set it above
         objects.push(object);
         scene.add(object.mesh);
 
-        // Handle adjacent obstacles
-        if (spawnAdjacent) {
-            let adjacentLane;
-            if (lanePosition === state.lanePositions[0]) {
-                adjacentLane = state.lanePositions[1];
-            } else if (lanePosition === state.lanePositions[2]) {
-                adjacentLane = state.lanePositions[1];
-            } else {
-                adjacentLane = Math.random() < 0.5 ? state.lanePositions[0] : state.lanePositions[2];
-            }
+        // Handle adjacent obstacles (max 2 lanes, scales with zkLevel)
+        if (type === 'obstacle' && state.powerUpsCollected >= state.adjacentObstacleThreshold) {
+            const adjacentChance = Math.min(0.13 + (zkLevel * 0.05), 0.4); // 10% at L1, up to 50% at L9+
+            if (Math.random() < adjacentChance && availableLanes.length > 1) {
+                const remainingLanes = availableLanes.filter(lane => lane !== lanePosition);
+                const adjacentLane = remainingLanes[Math.floor(Math.random() * remainingLanes.length)];
 
-            // Create adjacent obstacle with same larger dimensions
-            const adjacentGeometry = new THREE.BoxGeometry(1.5, 0.6, 0.6);
-            const adjacentObject = {
-                mesh: new THREE.Mesh(
-                    adjacentGeometry,
-                    new THREE.MeshPhongMaterial({ 
-                        color: 0xff6600,
-                        shininess: 30
-                    })
-                ),
-                type: 'obstacle',
-                z: -100
-            };
-            
-            adjacentObject.mesh.position.set(adjacentLane, 0.3, -100);
-            objects.push(adjacentObject);
-            scene.add(adjacentObject.mesh);
+                // Spawn one adjacent obstacle (max 2 lanes total)
+                if (objects.length < maxObjects) {
+                    const adjacentGeometry = new THREE.BoxGeometry(1.5, 0.6, 0.6);
+                    const adjacentObject = {
+                        mesh: new THREE.Mesh(
+                            adjacentGeometry,
+                            new THREE.MeshPhongMaterial({ 
+                                color: 0xff6600,
+                                shininess: 30
+                            })
+                        ),
+                        type: 'obstacle',
+                        z: spawnZ
+                    };
+                    adjacentObject.mesh.position.set(adjacentLane, 0.3, spawnZ);
+                    objects.push(adjacentObject);
+                    scene.add(adjacentObject.mesh);
+                }
+            }
         }
     }
 }
@@ -1569,6 +1636,9 @@ function startGame() {
     // Clear any existing objects
     objects.forEach(obj => scene.remove(obj.mesh));
     objects.length = 0;
+
+    lastSpawnedType = null;
+    obstaclesSinceLastPowerUp = 0;
     
     // Hide game over screen
     gameOverScreen.style.display = 'none';
