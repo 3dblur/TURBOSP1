@@ -1256,7 +1256,7 @@ const objects = [];
 
 // Game State
 const state = {
-    speed: 0.4,
+    speed: 0.45,
     maxSpeed: 1.2,
     acceleration: 0.0002,
     bikeLane: 1,  // 0, 1, 2 for left, middle, right
@@ -1268,7 +1268,7 @@ const state = {
     targetLane: 1, // Add this to track the target lane
     powerUpsCollected: 0,
     zkPowerUpsForFact: 0,
-    baseSpeed: 0.4,
+    baseSpeed: 0.45,
     speedMultiplier: 1,
     //obstacleCount: 0,  // Track obstacles for power-up spawning
     adjacentObstacleThreshold: 4,  // Minimum power-ups needed before adjacent obstacles can appear
@@ -1749,14 +1749,14 @@ let lastSpawnTime = 0;
 function spawnObject() {
     // Constants for visibility and density
     const baseSpawnZ = -100;       // Base spawn point
-    const maxSpawnZOffset = -200;  // Adjusted: Extended to -200 for more spacing
+    const maxSpawnZOffset = -200;  // Extended spacing
     const despawnZ = 10;           // Despawn point
-    const minObjects = 6;          // Minimum objects to keep road active
-    const maxObjects = 12;          // Adjusted: Reduced to 6 to further reduce density
-    const maxPowerUpPercentage = 0.35; // Cap power-ups at 40% of visible objects
-    const minObstaclesBetweenPowerUps = 3; // Require at least 2 obstacles between power-ups
-    const minSpawnCooldown = 130;  // Adjusted: Increased to 0.75s for more spacing
-    const maxSpawnCooldown = 300; // Adjusted: Increased to 2s for more spacing
+    const minObjects = 5;          // Minimum objects to keep road active
+    const maxObjects = 10;         // Maximum objects at once
+    const maxPowerUpPercentage = 0.25; // Cap power-ups at 25% of visible objects (reduced from 35%)
+    const minObstaclesBetweenPowerUps = 2; // Require at least 2 obstacles between power-ups (reduced from 3)
+    const minSpawnCooldown = 200;  // Minimum cooldown in ms
+    const maxSpawnCooldown = 350;  // Maximum cooldown in ms (reduced variance)
     
     // Count visible objects
     const visibleObjects = objects.filter(obj => obj.z < despawnZ && obj.z > maxSpawnZOffset);
@@ -1766,13 +1766,18 @@ function spawnObject() {
     // Calculate current power-up percentage
     const powerUpPercentage = visibleObjects.length > 0 ? visiblePowerUps / visibleObjects.length : 0;
 
-    // Base spawn probability, increased if road is sparse
-    const baseSpawnChance = visibleObjects.length < minObjects ? 0.2 : 0.07; // Adjusted: Reduced to 4% (20% if sparse)
-
+    // Base spawn probability - more consistent than before
+    let baseSpawnChance = 0.08; // 8% default chance
+    
+    // Increase spawn chance if road is too sparse
+    if (visibleObjects.length < minObjects) {
+        baseSpawnChance = 0.15; // 15% chance if sparse
+    }
+    
     // Check spawn cooldown
     const currentTime = performance.now();
     const timeSinceLastSpawn = currentTime - lastSpawnTime;
-    const spawnCooldown = minSpawnCooldown + Math.random() * (maxSpawnCooldown - minSpawnCooldown); // Random cooldown between 0.75-2s
+    const spawnCooldown = minSpawnCooldown + Math.random() * (maxSpawnCooldown - minSpawnCooldown);
 
     if (Math.random() < baseSpawnChance && timeSinceLastSpawn >= spawnCooldown) {
         // Cap total objects
@@ -1805,19 +1810,31 @@ function spawnObject() {
         // Skip if all lanes are occupied at the chosen z-position
         if (availableLanes.length === 0) return;
 
-        // Base power-up chance (decreases with zkLevel)
-        let powerUpChance = Math.max(0.3 - (zkLevel * 0.03), 0.15); // 30% at L1, down to 15% at L6+
-
-        // Adjust power-up chance based on ZK Meter progress (increase if close to filling)
+        // Base power-up chance (decreases with zkLevel) - more gradual decrease
+        let powerUpChance = Math.max(0.25 - (zkLevel * 0.02), 0.12); // 25% at L1, down to 12% at L7+
         
+        // Add zkMeter progress adjustment
+        if (state.zkMeter && state.zkMeter > 0.75) {
+            // Increase power-up chance when meter is nearly full
+            powerUpChance += 0.05;
+        }
 
-        // Adjust power-up chance based on cap and consecutive power-up rule
+        // Power-up distribution controls
         if (powerUpPercentage >= maxPowerUpPercentage) {
-            powerUpChance = 0.01; // Force-spawn obstacles if power-up cap is reached
-        } else if (visiblePowerUps === 0) {
-            powerUpChance = 0.8; // Force-spawn a power-up if none are visible
+            // Force obstacles if power-up cap is reached
+            powerUpChance = 0;
+        } else if (visiblePowerUps === 0 && visibleObjects.length >= 3) {
+            // Moderate chance to spawn power-up if none visible and we have some obstacles
+            powerUpChance = 0.4; // Reduced from 0.8 for better balance
         } else if (lastSpawnedType === 'powerUp' && obstaclesSinceLastPowerUp < minObstaclesBetweenPowerUps) {
-            powerUpChance = 0; // Force-spawn an obstacle if we need more obstacles before the next power-up
+            // Force obstacles between power-ups
+            powerUpChance = 0;
+        }
+        
+        // Adjust power-up distribution based on player performance
+        if (state.playerDeaths && state.playerDeaths > 0) {
+            // Slight increase in power-ups after player deaths
+            powerUpChance = Math.min(powerUpChance + (state.playerDeaths * 0.03), 0.4);
         }
 
         // Decide type
@@ -1873,10 +1890,17 @@ function spawnObject() {
         objects.push(object);
         scene.add(object.mesh);
 
-        // Handle adjacent obstacles (max 2 lanes, scales with zkLevel)
+        // Handle adjacent obstacles (scales with zkLevel)
         if (type === 'obstacle' && state.powerUpsCollected >= state.adjacentObstacleThreshold) {
-            const adjacentChance = Math.min(0.1 + (zkLevel * 0.05), 0.2); // 10% at L1, up to 50% at L9+
-            if (Math.random() < adjacentChance && availableLanes.length > 1) {
+            // More gradual increase in adjacent obstacle chance
+            const adjacentChance = Math.min(0.05 + (zkLevel * 0.03), 0.25); // 5% at L1, up to 25% at L8+
+            
+            // Reduce adjacent obstacle chance if player recently died
+            const finalAdjacentChance = state.playerDeaths && state.playerDeaths > 0 ? 
+                adjacentChance * Math.max(0.5, 1 - (state.playerDeaths * 0.1)) : 
+                adjacentChance;
+                
+            if (Math.random() < finalAdjacentChance && availableLanes.length > 1) {
                 const remainingLanes = availableLanes.filter(lane => lane !== lanePosition);
                 const adjacentLane = remainingLanes[Math.floor(Math.random() * remainingLanes.length)];
 
@@ -1902,7 +1926,6 @@ function spawnObject() {
         }
     }
 }
-
 // Show speed notification
 function showSpeedNotification(multiplier) {
     speedNotification.textContent = `Speed Increased! (${multiplier.toFixed(1)}x)`;
