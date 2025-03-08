@@ -474,6 +474,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Add this to your script.js
 
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(0, 10, 10);
+    scene.add(directionalLight);
+
+    // Initialize bike
+    bike = new THREE.Group();
+    const bikeGeometry = new THREE.BoxGeometry(1, 0.5, 2);
+    const bikeMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+    const bikeMesh = new THREE.Mesh(bikeGeometry, bikeMaterial);
+    bike.add(bikeMesh);
+    scene.add(bike); // Directly to scene, not road or spaceElements
+
+    // Default map setup
+    currentMap = maps.highway;
+    setupMap(currentMap);
+}
+
+window.addEventListener('load', init);
+
+
 // Array of fun facts about zk proofs (beginner-friendly)
 const zkProofFunFacts = [
    "Zk proofs are like a superhero’s secret identity—you prove you’ve got the powers without unmasking yourself!",
@@ -813,8 +843,8 @@ usernameContent.style.boxShadow = 'inset 1px 1px 0px #FFB6C1, inset -1px -1px 0p
 usernameContent.style.fontFamily = "'Chicago', 'Arial', sans-serif"; // Retro font (fallback to Arial)
 usernameContent.style.position = 'relative'; // For positioning window controls
 
-// Pink-themed HTML content with Mac OS 7-style window controls
-usernameContent.innerHTML = `
+// Pink-themed HTML content with Mac OS 7-style window controls and map selection
+usernameContent.innerHTML = ` // Replace the previous innerHTML with this
     <div style="position: absolute; top: 5px; left: 5px; display: flex; gap: 5px;">
         <button id="closeBtn" style="width: 12px; height: 12px; background: #FF4040; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
         <button id="minimizeBtn" style="width: 12px; height: 12px; background: #FFBF00; border: 1px solid #C71585; border-radius: 50%; cursor: pointer;"></button>
@@ -827,6 +857,13 @@ usernameContent.innerHTML = `
         Please enter a username to track your scores on the leaderboard.
     </div>
     <input type="text" id="usernameInput" placeholder="Username" style="width: 100%; padding: 8px; margin-bottom: 20px; border: 2px solid #FF1493; background: #FFE4E1; font-family: 'Chicago', 'Arial', sans-serif; font-size: 16px; box-sizing: border-box; color: #C71585; text-align: center;">
+    <div style="font-size: 16px; text-align: center; margin-bottom: 10px; color: #FFF; text-shadow: 1px 1px 0px #C71585;">
+        Select Map:
+    </div>
+    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
+        <button id="mapHighwayBtn" style="padding: 6px 15px; border: 2px solid #FF1493; background: #FF69B4; font-family: 'Chicago', 'Arial', sans-serif; font-size: 14px; cursor: pointer; color: #FFF; text-shadow: 1px 1px 0px #C71585;">Highway</button>
+        <button id="mapTechChipBtn" style="padding: 6px 15px; border: 2px solid #FF1493; background: #FF69B4; font-family: 'Chicago', 'Arial', sans-serif; font-size: 14px; cursor: pointer; color: #FFF; text-shadow: 1px 1px 0px #C71585;">Tech Chip</button>
+    </div>
     <div style="text-align: center;">
         <button id="startGameBtn" style="padding: 8px 20px; border: 2px solid #FF1493; background: #FF69B4; font-family: 'Chicago', 'Arial', sans-serif; font-size: 16px; cursor: pointer; color: #FFF; text-shadow: 1px 1px 0px #C71585;">Start Game</button>
     </div>
@@ -835,9 +872,10 @@ usernameContent.innerHTML = `
 usernameModal.appendChild(usernameContent);
 document.body.appendChild(usernameModal);
 document.body.appendChild(infoPanel);
+
 // Add retro font and button styles
 const style = document.createElement('style');
-style.textContent = `
+style.textContent = ` // Replace the previous style.textContent with this
     @font-face {
         font-family: 'Chicago';
         src: url('https://db.onlinewebfonts.com/t/6b290d6c2d0432f8e4e7e3f0a6e8f2f6.woff') format('woff');
@@ -857,7 +895,43 @@ style.textContent = `
     #maximizeBtn:hover {
         background: #33FF33;
     }
+    #mapHighwayBtn:hover, #mapTechChipBtn:hover {
+        background: #FF1493; /* Deep pink on hover */
+    }
+    #mapHighwayBtn:active, #mapTechChipBtn:active {
+        background: #C71585; /* Darker pink when pressed */
+    }
+    #mapHighwayBtn.selected, #mapTechChipBtn.selected {
+        background: #FF1493; /* Highlight selected map */
+        border-color: #FFF; /* White border for selected */
+    }
+    
+    #mapHighwayBtn, #mapTechChipBtn { 
+        padding: 6px 15px;
+        border: 2px solid #FF1493;
+        background: #FF69B4;
+        font-family: 'Chicago', 'Arial', sans-serif;
+        font-size: 14px;
+        cursor: pointer;
+        color: #FFF;
+        text-shadow: 1px 1px 0px #C71585;
+        transition: background 0.2s ease;
+    }
+
+    #mapHighwayBtn:hover, #mapTechChipBtn:hover {
+        background: #FF1493;
+    }
+
+    #mapHighwayBtn:active, #mapTechChipBtn:active {
+        background: #C71585;
+    }
+
+    #mapHighwayBtn.selected, #mapTechChipBtn.selected {
+        background: #FF1493;
+        border-color: #FFF;
+    }
 `;
+
 document.head.appendChild(style);
 
 
@@ -895,6 +969,10 @@ scene.add(backLight);
 // Enable shadows
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+
+
+
 
 // Create a canvas-based texture for the SP1 power-up
 function createSP1Texture() {
@@ -1239,12 +1317,238 @@ function createDetailedBike() {
 }
 
 // Replace the old road and bike creation with the new ones
-const road = createDetailedRoad();
-scene.add(road);
+
+
+// Scene Setup
+
+
+// Add this section: Map Definitions
+const maps = { // Add this new object definition
+    highway: {
+        name: "Highway",
+        createRoad: createDetailedRoad, // Rename to createHighwayRoad if preferred
+        createEnvironment: createSpaceEnvironment,
+        ambientLightColor: 0xffffff,
+        ambientLightIntensity: 0.6,
+        directionalLightColor: 0xffffff,
+        directionalLightIntensity: 0.8,
+    },
+    techChip: {
+        name: "Tech Chip Dreamscape",
+        createRoad: createTechChipRoad, // New function defined below
+        createEnvironment: createTechChipEnvironment, // New function defined below
+        ambientLightColor: 0xff69b4, // Pinkish ambient light
+        ambientLightIntensity: 0.7,
+        directionalLightColor: 0xffb6c1, // Light pink directional light
+        directionalLightIntensity: 0.6,
+    }
+};
+
+let currentMap = maps.techChip; // Add this line to set default map
+// Replace const road = createDetailedRoad(); with this
+// Remove scene.add(road); entirely
+
+
+
+// Replace const spaceElements = createSpaceEnvironment(); with this
+
+// Add this function: Tech Chip Road
+function createTechChipRoad() {
+    const roadGroup = new THREE.Group();
+    
+    // Neon colors to match the chip environment
+    const neonPink = 0xff69b4;
+    const neonBlue = 0x00f2D6;
+    const darkBg = 0x000819;
+    
+    // Road dimensions - matching values from chip space environment
+    const roadWidth = 15;
+    const shoulderWidth = 3;
+    const totalRoadWidth = roadWidth + 2 * shoulderWidth;
+    const roadLength = 1000;
+    
+    // Main road (tech-chip style with circuit-like aesthetic)
+    const roadGeometry = new THREE.PlaneGeometry(roadWidth, roadLength, 20, 1000);
+    const roadMaterial = new THREE.MeshPhongMaterial({ 
+        color: darkBg, // Dark background to match environment
+        roughness: 0.9,
+        metalness: 0.1,
+        side: THREE.DoubleSide,
+        emissive: neonPink, // Same pink glow as environment
+        emissiveIntensity: 0.2 // Subtle circuit glow
+    });
+    const road = new THREE.Mesh(roadGeometry, roadMaterial);
+    road.rotation.x = -Math.PI / 2;
+    road.position.y = -0.1; // Match the -0.1 position of circuit nodes
+    roadGroup.add(road);
+
+    // Circuit lane markers (glowing pink lines)
+    function createCircuitMarker(x) {
+        for (let z = -roadLength/2; z < roadLength/2; z += 20) {
+            // Skip some markers randomly for tech-glitch aesthetic
+            if (Math.random() < 0.2) continue;
+            
+            const lineGeometry = new THREE.PlaneGeometry(0.3, 10);
+            const lineMaterial = new THREE.MeshPhongMaterial({ 
+                color: neonPink,
+                emissive: neonPink,
+                emissiveIntensity: 0.5,
+                side: THREE.DoubleSide
+            });
+            const line = new THREE.Mesh(lineGeometry, lineMaterial);
+            line.rotation.x = -Math.PI / 2;
+            line.position.set(x, 0.01, z);
+            roadGroup.add(line);
+        }
+    }
+
+    createCircuitMarker(-roadWidth/6);
+    createCircuitMarker(roadWidth/6);
+
+    // Tech shoulders with subtle circuit pattern
+    const shoulderGeometry = new THREE.PlaneGeometry(shoulderWidth, roadLength);
+    const shoulderMaterial = new THREE.MeshPhongMaterial({ 
+        color: darkBg, // Matching dark background
+        roughness: 0.8,
+        emissive: neonBlue, // Using neon blue to complement the pink
+        emissiveIntensity: 0.1,
+        side: THREE.DoubleSide
+    });
+
+    const leftShoulder = new THREE.Mesh(shoulderGeometry, shoulderMaterial);
+    leftShoulder.rotation.x = -Math.PI / 2;
+    leftShoulder.position.set(-roadWidth/2 - shoulderWidth/2, -0.11, 0);
+    roadGroup.add(leftShoulder);
+
+    const rightShoulder = new THREE.Mesh(shoulderGeometry, shoulderMaterial);
+    rightShoulder.rotation.x = -Math.PI / 2;
+    rightShoulder.position.set(roadWidth/2 + shoulderWidth/2, -0.11, 0);
+    roadGroup.add(rightShoulder);
+    
+    // Add circuit traces along the shoulders
+    const circuitCount = 60; // More circuits for more detailed road
+    
+    for (let i = 0; i < circuitCount; i++) {
+        // Determine which shoulder to place the circuit on
+        const side = Math.random() > 0.5 ? 1 : -1;
+        const x = side * (roadWidth/2 + shoulderWidth/2);
+        
+        // Random position along road
+        const z = (Math.random() - 0.5) * roadLength;
+        const y = -0.09; // Just above shoulder
+        
+        // Circuit node points
+        const nodeGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+        const nodeMaterial = new THREE.MeshBasicMaterial({
+            color: neonBlue,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        // Create node
+        const node = new THREE.Mesh(nodeGeometry, nodeMaterial);
+        node.position.set(x, y, z);
+        roadGroup.add(node);
+        
+        // Create a small circuit line perpendicular to road
+        const circuitGeometry = new THREE.BufferGeometry();
+        const offset = (Math.random() * 1 + 0.5) * side;
+        const positions = new Float32Array([
+            x, y, z,
+            x + offset, y, z
+        ]);
+        circuitGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        
+        const circuitMaterial = new THREE.LineBasicMaterial({
+            color: neonBlue,
+            transparent: true,
+            opacity: 0.7
+        });
+        
+        const circuit = new THREE.Line(circuitGeometry, circuitMaterial);
+        roadGroup.add(circuit);
+    }
+    
+    // Add glowing dots on the road itself
+    for (let i = 0; i < 200; i++) {
+        const dotGeometry = new THREE.CircleGeometry(0.1, 8);
+        const dotMaterial = new THREE.MeshBasicMaterial({
+            color: Math.random() > 0.5 ? neonPink : neonBlue,
+            transparent: true,
+            opacity: 0.7
+        });
+        
+        const dot = new THREE.Mesh(dotGeometry, dotMaterial);
+        dot.rotation.x = -Math.PI / 2;
+        
+        // Random position on road
+        const x = (Math.random() - 0.5) * roadWidth;
+        const z = (Math.random() - 0.5) * roadLength;
+        dot.position.set(x, 0.02, z);
+        
+        roadGroup.add(dot);
+    }
+
+    return roadGroup;
+}
+
+// Add this function: Tech Chip Environment
+
+
+// Add this function: Map Setup
+let road = null; // Keep using 'road' to match your existing code
+let spaceElements = null; // Keep using 'spaceElements' for consistency
+
+function setupMap(map) {
+    console.log(`Setting up map: ${map.name}`);
+
+    // Remove existing road if it exists
+    if (road) {
+        scene.remove(road);
+        // Optional: Dispose only if not shared with other objects
+        if (road.geometry) road.geometry.dispose();
+        if (road.material) road.material.dispose();
+    }
+
+    // Remove existing environment if it exists
+    if (spaceElements) {
+        // Handle both Highway (stars, gridHelper) and Tech Chip (particles, gridHelper)
+        if (spaceElements.gridHelper) scene.remove(spaceElements.gridHelper);
+        if (spaceElements.stars) scene.remove(spaceElements.stars);
+        if (spaceElements.particles) scene.remove(spaceElements.particles);
+        // Dispose of resources
+        if (spaceElements.gridHelper && spaceElements.gridHelper.geometry) spaceElements.gridHelper.geometry.dispose();
+        if (spaceElements.gridHelper && spaceElements.gridHelper.material) spaceElements.gridHelper.material.dispose();
+        if (spaceElements.stars && spaceElements.stars.geometry) spaceElements.stars.geometry.dispose();
+        if (spaceElements.stars && spaceElements.stars.material) spaceElements.stars.material.dispose();
+        if (spaceElements.particles && spaceElements.particles.geometry) spaceElements.particles.geometry.dispose();
+        if (spaceElements.particles && spaceElements.particles.material) spaceElements.particles.material.dispose();
+    }
+
+    // Create and add the new road
+    road = map.createRoad();
+    scene.add(road);
+
+    // Create and add the new environment
+    spaceElements = map.createEnvironment();
+    // Add all environment elements to the scene
+    if (spaceElements.gridHelper) scene.add(spaceElements.gridHelper);
+    if (spaceElements.stars) scene.add(spaceElements.stars);
+    if (spaceElements.particles) scene.add(spaceElements.particles);
+
+    // Update lighting
+    ambientLight.color.set(map.ambientLightColor);
+    ambientLight.intensity = map.ambientLightIntensity;
+    directionalLight.color.set(map.directionalLightColor);
+    directionalLight.intensity = map.directionalLightIntensity;
+
+    console.log(`Map ${map.name} setup complete`);
+}
 
 const bike = createDetailedBike();
 bike.position.set(0, 0.3, 0);
 scene.add(bike);
+
 
 // Obstacles and Power-Ups (orange and pink boxes)
 const obstacleGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
@@ -2202,6 +2506,11 @@ function startGame() {
     zkLevel = 1;
     zkLevelLabel.textContent = 'L1';
   
+    if (!bike) {
+        console.error('Bike is undefined in startGame! Aborting.');
+        return;
+    }
+
     // Reset bike state
     bike.position.set(0, 0.3, 0);
     bike.isInvincible = false;
@@ -2269,12 +2578,28 @@ function startGame() {
       }
     }
   
-    // Start animation loop
-    animate();
-  }
+    // Setup the selected map
+    setupMap(currentMap); // Add this line before animate()
+    animate(); // Replace animate(); with setupMap(currentMap); animate();
+}
 
 // Update the start game button event listener
-document.getElementById('startGameBtn').addEventListener('click', () => {
+document.getElementById('mapHighwayBtn').addEventListener('click', () => {
+    currentMap = maps.highway;
+    document.getElementById('mapHighwayBtn').classList.add('selected');
+    document.getElementById('mapTechChipBtn').classList.remove('selected');
+});
+
+document.getElementById('mapTechChipBtn').addEventListener('click', () => {
+    currentMap = maps.techChip;
+    document.getElementById('mapTechChipBtn').classList.add('selected');
+    document.getElementById('mapHighwayBtn').classList.remove('selected');
+});
+
+// Set default selection
+document.getElementById('mapHighwayBtn').classList.add('selected');
+
+document.getElementById('startGameBtn').addEventListener('click', () => { // Replace the previous event listener with this
     const usernameInput = document.getElementById('usernameInput');
     const username = usernameInput.value.trim();
     
@@ -2297,7 +2622,7 @@ document.getElementById('startGameBtn').addEventListener('click', () => {
             meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
         }
     }
-    // Start the game
+    // Start the game with the selected map
     startGame();
 });
 //document.getElementById('startGameBtn').addEventListener('click', () => {
@@ -2328,6 +2653,7 @@ const TouchControls = {
     active: false,
 
     init() {
+        
         if (!isMobile()) return; // Skip on desktop
         this.active = true;
 
@@ -2747,7 +3073,221 @@ window.onload = function() {
     // Return only the stars and grid helper
     return { stars, gridHelper };
 }
+
 */
+
+function createTechChipEnvironment() {
+    // Create a group to hold all environment elements
+    const envGroup = new THREE.Group();
+    
+    // Neon colors for chip aesthetic
+    const neonPink = 0x00D2D6;
+    const neonBlue = 0x00ffff;
+    const darkBg = 0x000819;
+    
+    // Create pink grid floor - matching your working space environment
+    const gridHelper = new THREE.GridHelper(1000, 100, neonPink, neonPink);
+    gridHelper.position.y = -0.2; // Same position as your space environment
+    envGroup.add(gridHelper);
+    
+    // Define road boundaries - matching your working code
+    const roadWidth = 15; 
+    const shoulderWidth = 3;
+    const totalRoadWidth = roadWidth + 2 * shoulderWidth;
+    const roadMinX = -totalRoadWidth / 2;
+    const roadMaxX = totalRoadWidth / 2;
+    const roadMinY = -0.2;
+    const roadMaxY = 5;
+    const roadMinZ = -500;
+    const roadMaxZ = 500;
+    
+    // Create starfield with digital/chip-like particles
+    const starCount = 1000;
+    const starsGeometry = new THREE.BufferGeometry();
+    const starPositions = [];
+    
+    // Generate star positions, filtering out those near the road - same as your working code
+    for (let i = 0; i < starCount; i++) {
+        const x = (Math.random() - 0.5) * 200;
+        const y = Math.random() * 100;
+        const z = (Math.random() - 0.5) * 200;
+
+        // Skip stars that are within the road's x-range AND below the height threshold
+        if (x >= roadMinX && x <= roadMaxX && y <= roadMaxY) {
+            continue; // Skip this star
+        }
+
+        // Add star to positions array
+        starPositions.push(x, y, z);
+    }
+
+    // Convert star positions to Float32Array for BufferGeometry
+    const starPositionsArray = new Float32Array(starPositions);
+    starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositionsArray, 3));
+    
+    // Use multi-colored stars for chip-like feel
+    const starColors = [];
+    for (let i = 0; i < starPositions.length/3; i++) {
+        // Random color selection
+        if (Math.random() > 0.7) {
+            // Neon pink
+            starColors.push(1.0, 0.4, 0.7);
+        } else if (Math.random() > 0.4) {
+            // Neon blue/cyan
+            starColors.push(0, 1.0, 1.0);
+        } else {
+            // White
+            starColors.push(1.0, 1.0, 1.0);
+        }
+    }
+    
+    // Add colors to geometry
+    const starColorsArray = new Float32Array(starColors);
+    starsGeometry.setAttribute('color', new THREE.BufferAttribute(starColorsArray, 3));
+    
+    const starMaterial = new THREE.PointsMaterial({
+        size: 0.3,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8
+    });
+    
+    const stars = new THREE.Points(starsGeometry, starMaterial);
+    envGroup.add(stars);
+    
+    // Add circuit traces - static, no animation needed
+    const circuitGeometry = new THREE.BufferGeometry();
+    const circuitPositions = [];
+    const circuitCount = 100;
+    
+    // Create circuit paths around the environment, avoiding road
+    for (let i = 0; i < circuitCount; i++) {
+        // Start point away from road
+        let x = (Math.random() - 0.5) * 200;
+        
+        // Make sure circuits don't start on the road
+        if (x > roadMinX - 5 && x < roadMaxX + 5) {
+            x = (x < 0) ? roadMinX - 10 - Math.random() * 20 : roadMaxX + 10 + Math.random() * 20;
+        }
+        
+        const z = (Math.random() - 0.5) * 200;
+        const y = -0.1; // Just above grid
+        
+        // End point - make a straight line in random direction
+        const length = Math.random() * 15 + 5;
+        const direction = Math.floor(Math.random() * 4);
+        
+        let x2, z2;
+        if (direction === 0) {
+            x2 = x + length;
+            z2 = z;
+        } else if (direction === 1) {
+            x2 = x - length;
+            z2 = z;
+        } else if (direction === 2) {
+            x2 = x;
+            z2 = z + length;
+        } else {
+            x2 = x;
+            z2 = z - length;
+        }
+        
+        // Add circuit line
+        circuitPositions.push(x, y, z, x2, y, z2);
+    }
+    
+    const circuitPositionsArray = new Float32Array(circuitPositions);
+    circuitGeometry.setAttribute('position', new THREE.BufferAttribute(circuitPositionsArray, 3));
+    
+    const circuitMaterial = new THREE.LineBasicMaterial({
+        color: neonBlue,
+        transparent: true,
+        opacity: 0.7
+    });
+    
+    const circuits = new THREE.LineSegments(circuitGeometry, circuitMaterial);
+    envGroup.add(circuits);
+    
+    // Add circuit nodes at endpoints
+    const nodeGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+    const nodeMaterial = new THREE.MeshBasicMaterial({
+        color: neonBlue,
+        transparent: true,
+        opacity: 0.8
+    });
+    
+    for (let i = 0; i < circuitPositions.length; i += 6) {
+        // Start node
+        const startNode = new THREE.Mesh(nodeGeometry, nodeMaterial);
+        startNode.position.set(
+            circuitPositions[i],
+            circuitPositions[i+1],
+            circuitPositions[i+2]
+        );
+        envGroup.add(startNode);
+        
+        // End node
+        const endNode = new THREE.Mesh(nodeGeometry, nodeMaterial);
+        endNode.position.set(
+            circuitPositions[i+3],
+            circuitPositions[i+4],
+            circuitPositions[i+5]
+        );
+        envGroup.add(endNode);
+    }
+    
+    // Add distant chip components (blocky structures)
+    const blockCount = 40;
+    
+    for (let i = 0; i < blockCount; i++) {
+        // Position far from road
+        let x = (Math.random() - 0.5) * 180;
+        
+        // Keep blocks away from road
+        if (x > roadMinX - 20 && x < roadMaxX + 20) {
+            x = (x < 0) ? roadMinX - 30 - Math.random() * 30 : roadMaxX + 30 + Math.random() * 30;
+        }
+        
+        const z = (Math.random() - 0.5) * 180;
+        const width = Math.random() * 10 + 5;
+        const height = Math.random() * 20 + 10;
+        const depth = Math.random() * 10 + 5;
+        
+        // Create chip component block
+        const blockGeometry = new THREE.BoxGeometry(width, height, depth);
+        const blockMaterial = new THREE.MeshBasicMaterial({
+            color: Math.random() > 0.5 ? neonPink : neonBlue,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.5
+        });
+        
+        const block = new THREE.Mesh(blockGeometry, blockMaterial);
+        block.position.set(x, height/2, z);
+        envGroup.add(block);
+    }
+    
+    // Try to load logo if it exists - same as your working code
+    try {
+        const loader = new THREE.TextureLoader();
+        const logoTexture = loader.load('/logo.png'); 
+        const logoGeometry = new THREE.PlaneGeometry(200, 50);
+        const logoMaterial = new THREE.MeshBasicMaterial({
+            map: logoTexture,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+        const logo = new THREE.Mesh(logoGeometry, logoMaterial);
+        logo.position.set(0, 20, -500);
+        envGroup.add(logo);
+    } catch (e) {
+        console.log("Logo loading skipped or failed");
+    }
+    
+    // Return the same objects as your space environment for compatibility
+    return { stars, gridHelper, envGroup };
+}
+
 function createSpaceEnvironment() {
     // Create pink grid floor - place it below the road
     const gridHelper = new THREE.GridHelper(1000, 100, 0xff69b4, 0xff69b4);
@@ -2814,6 +3354,4 @@ function createSpaceEnvironment() {
     return { stars, gridHelper };
 }
 
-// Call this function right after scene setup
-const spaceElements = createSpaceEnvironment(); 
 
