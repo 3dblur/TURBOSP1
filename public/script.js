@@ -1,6 +1,18 @@
-
 // audioManager.js
+class LinearCongruentialGenerator {
+    constructor(seed) {
+        this.modulus = 2 ** 32;
+        this.a = 1664525;
+        this.c = 1013904223;
+        this.seed = seed;
+        this.current = seed;
+    }
 
+    next() {
+        this.current = (this.a * this.current + this.c) % this.modulus;
+        return this.current / this.modulus; // Returns a value between 0 and 1
+    }
+}
 // We'll create the AudioContext only when needed
 let audioContext = null;
 
@@ -1259,20 +1271,25 @@ const state = {
     speed: 0.45,
     maxSpeed: 1.2,
     acceleration: 0.0002,
-    bikeLane: 1,  // 0, 1, 2 for left, middle, right
-    lanePositions: [-5, 0, 5], // Update lane positions to match new road width
+    bikeLane: 1,
+    lanePositions: [-5, 0, 5],
     score: 1,
     highScore: 1,
     gameOver: false,
-    canChangeLane: true, // Add this to track if we can change lanes
-    targetLane: 1, // Add this to track the target lane
+    canChangeLane: true,
+    targetLane: 1,
     powerUpsCollected: 0,
     zkPowerUpsForFact: 0,
     baseSpeed: 0.45,
     speedMultiplier: 1,
-    //obstacleCount: 0,  // Track obstacles for power-up spawning
-    adjacentObstacleThreshold: 4,  // Minimum power-ups needed before adjacent obstacles can appear
+    adjacentObstacleThreshold: 4,
     username: '',
+    // New properties for SP1 integration
+    seed: 0,              // Will be set in startGame
+    prng: null,           // Will be initialized in startGame
+    actions: [],          // Array of {frame, action} objects
+    frame: 0,             // Frame counter
+    laneChangeCooldown: 0 // Cooldown in frames
 };
 
 const keys = {};
@@ -1394,50 +1411,61 @@ function animate() {
 
     renderer.render(scene, camera);
 }
-
+function changeLane(direction) {
+    if (state.laneChangeCooldown > 0) return;
+    if (direction === 'left' && state.bikeLane > 0) {
+        state.targetLane = state.bikeLane - 1;
+        state.bikeLane = state.targetLane;
+        state.actions.push({ frame: state.frame, action: 'left' });
+        state.laneChangeCooldown = 10; // 10-frame cooldown
+    } else if (direction === 'right' && state.bikeLane < 2) {
+        state.targetLane = state.bikeLane + 1;
+        state.bikeLane = state.targetLane;
+        state.actions.push({ frame: state.frame, action: 'right' });
+        state.laneChangeCooldown = 10;
+    }
+}
 // Update the bike controls for three lanes
+function changeLane(direction) {
+    if (state.laneChangeCooldown > 0) return;
+    if (direction === 'left' && state.bikeLane > 0) {
+        state.targetLane = state.bikeLane - 1;
+        state.bikeLane = state.targetLane;
+        state.actions.push({ frame: state.frame, action: 'left' });
+        state.laneChangeCooldown = 10; // 10-frame cooldown
+    } else if (direction === 'right' && state.bikeLane < 2) {
+        state.targetLane = state.bikeLane + 1;
+        state.bikeLane = state.targetLane;
+        state.actions.push({ frame: state.frame, action: 'right' });
+        state.laneChangeCooldown = 10;
+    }
+}
+
 function updateControls() {
-    if (state.canChangeLane) {
-        if (keys['ArrowLeft'] && state.bikeLane > 0) {
-            state.targetLane = state.bikeLane - 1;
-            state.bikeLane = state.targetLane;
-            state.canChangeLane = false;
-        }
-        if (keys['ArrowRight'] && state.bikeLane < 2) {
-            state.targetLane = state.bikeLane + 1;
-            state.bikeLane = state.targetLane;
-            state.canChangeLane = false;
-        }
+    if (keys['ArrowLeft']) {
+        changeLane('left');
     }
-    
-    // Reset the canChangeLane flag when keys are released
-    if (!keys['ArrowLeft'] && !keys['ArrowRight']) {
-        state.canChangeLane = true;
+    if (keys['ArrowRight']) {
+        changeLane('right');
     }
-    
+
     const targetX = state.lanePositions[state.bikeLane];
     const currentX = bike.position.x;
-    
+
     if (isMobile()) {
-        // Option 1: Faster lerp for mobile (snappy but still smooth)
-        bike.position.x += (targetX - currentX) * 0.3; // Increased from 0.1 to 0.5
-        // Option 2: Instant snap (uncomment to use instead)
-        // bike.position.x = targetX;
+        bike.position.x += (targetX - currentX) * 0.3;
     } else {
-        // Desktop: Keep smoother transition
         bike.position.x += (targetX - currentX) * 0.1;
     }
-    
-    // Bike lean effect (optional: reduce for snappier feel)
+
     const lean = (targetX - currentX) * 0.3;
     bike.rotation.z = -lean;
     bike.rotation.y = lean * 0.2;
-}
 
-function checkCollision(obj1, obj2) {
-    const box1 = new THREE.Box3().setFromObject(obj1);
-    const box2 = new THREE.Box3().setFromObject(obj2);
-    return box1.intersectsBox(box2);
+    // Decrement cooldown
+    if (state.laneChangeCooldown > 0) {
+        state.laneChangeCooldown--;
+    }
 }
 /*
 animate();*/
@@ -2186,92 +2214,81 @@ function endQuiz() {
     saveHighScore(state.score);
 }
 function startGame() {
-    // Reset game state
     state.gameOver = false;
     state.score = 1;
-    state.obstacleCount = 0;
     state.powerUpsCollected = 0;
     state.zkPowerUpsForFact = 0;
     state.speedMultiplier = 1;
     state.speed = state.baseSpeed;
     scoreDisplay.textContent = state.score;
-  
+
     // Reset power-up milestone trackers
     powerUpThreshold = 3;
     powerUpsForNextMilestone = 0;
     zkLevel = 1;
     zkLevelLabel.textContent = 'L1';
-  
+
+    // Initialize SP1-related state
+    state.seed = Math.floor(Math.random() * 1000000000); // Temporary random seed; could be server-provided
+    state.prng = new LinearCongruentialGenerator(state.seed);
+    state.actions = [];
+    state.frame = 0;
+    state.laneChangeCooldown = 0;
+
     // Reset bike state
     bike.position.set(0, 0.3, 0);
     bike.isInvincible = false;
-  
-    // Remove any existing invincibility shield
+
+    // Remove existing shield
     const shieldMesh = bike.getObjectByName('invincibilityShield');
     if (shieldMesh) {
-      bike.remove(shieldMesh);
-      shieldMesh.geometry.dispose();
-      shieldMesh.material.dispose();
+        bike.remove(shieldMesh);
+        shieldMesh.geometry.dispose();
+        shieldMesh.material.dispose();
     }
-  
-    // Reset glow effect on the bike
+
     bike.children.forEach(child => {
-      if (child.material) {
-        child.material.emissive.set(0x000000);
-        child.material.emissiveIntensity = 0;
-      }
+        if (child.material) {
+            child.material.emissive.set(0x000000);
+            child.material.emissiveIntensity = 0;
+        }
     });
-  
-    // Reset Zk Knowledge Meter
+
     zkMeterFill.style.width = '0%';
-  
-    // Clear existing objects
+
     objects.forEach(obj => scene.remove(obj.mesh));
     objects.length = 0;
-  
+
     lastSpawnedType = null;
     obstaclesSinceLastPowerUp = 0;
-  
-    // Hide game over screen
+
     gameOverScreen.style.display = 'none';
-  
-    // Start audio sequence
+
+    // Audio sequence
     if (window.audioManager) {
-      // Ensure AudioContext is resumed
-      if (!window.audioManager.isAudioReady()) {
-        window.audioManager.initAudio();
-      }
-  
-      // Stop any existing sounds cleanly
-      window.audioManager.stopGameMusic(0); // Immediate stop to avoid overlap
-      window.audioManager.stopBikeSound(0);
-  
-      // Play game start sound, then game music
-      const gameStartSource = window.audioManager.playGameStart();
-      if (gameStartSource) {
-        gameStartSource.onended = () => {
-          // Only play game music after gameStart finishes and audio files are loaded
-          window.audioManager.loadAudioFiles().then(() => {
-            window.audioManager.playGameMusic();
-            window.audioManager.playBikeSound();
-          }).catch(error => {
-            console.error('Audio files not loaded yet:', error);
-          });
-        };
-      } else {
-        // Fallback: If gameStart fails or isn’t available, proceed immediately
-        window.audioManager.loadAudioFiles().then(() => {
-          window.audioManager.playGameMusic();
-          window.audioManager.playBikeSound();
-        }).catch(error => {
-          console.error('Audio files not loaded yet:', error);
-        });
-      }
+        if (!window.audioManager.isAudioReady()) {
+            window.audioManager.initAudio();
+        }
+        window.audioManager.stopGameMusic(0);
+        window.audioManager.stopBikeSound(0);
+        const gameStartSource = window.audioManager.playGameStart();
+        if (gameStartSource) {
+            gameStartSource.onended = () => {
+                window.audioManager.loadAudioFiles().then(() => {
+                    window.audioManager.playGameMusic();
+                    window.audioManager.playBikeSound();
+                });
+            };
+        } else {
+            window.audioManager.loadAudioFiles().then(() => {
+                window.audioManager.playGameMusic();
+                window.audioManager.playBikeSound();
+            });
+        }
     }
-  
-    // Start animation loop
+
     animate();
-  }
+}
 
 // Update the start game button event listener
 document.getElementById('startGameBtn').addEventListener('click', () => {
@@ -2816,4 +2833,3 @@ function createSpaceEnvironment() {
 
 // Call this function right after scene setup
 const spaceElements = createSpaceEnvironment(); 
-

@@ -1,13 +1,17 @@
 {
   "name": "turbo-racing-3d",
   "version": "1.0.0",
-  "description": "3D Turbo Racing Game",
+  "description": "3D Turbo Racing Game with SP1 Integration",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "ethers": "^5.7.2",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "hardhat": "^2.22.19"
   }
 }
